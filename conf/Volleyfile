@@ -1,0 +1,10 @@
+
+Volley.plan :publish do
+  puts "LOADING PLAN"
+  publisher :amazons3
+  encrypt true
+
+  build do
+
+  end
+end

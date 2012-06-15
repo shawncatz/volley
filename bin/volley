@@ -1,3 +1,34 @@
 #!/usr/bin/env ruby
 
+require 'rubygems'
 require 'volley'
+require 'clamp'
+
+module Volley
+  class Command < Clamp::Command
+    parameter "PLAN", "the plan to run"
+    parameter "[ARG] ...", "additional arguments passed to plan of the form: name:value"
+
+    option %w{-c --config}, "CONFIG", "location of the configuration file", :default => "~/.Volleyfile"
+    option %w{-d --debug}, :flag, "set debug flag"
+
+    def execute
+      unless File.exists?("Volleyfile")
+        raise "could not locate Volleyfile"
+      end
+
+      Volley.config.debug = debug?
+
+      Volley::VolleyFile.load(config, :optional => true)
+      Volley::VolleyFile.load("Volleyfile")
+
+      Volley::VolleyFile.run(plan, :cliargs => arg_list)
+    rescue => e
+      puts "error: #{e.message}"
+      puts debug? ? e.backtrace.join("\n") : ""
+      raise Clamp::HelpWanted, self
+    end
+  end
+end
+
+Volley::Command.run

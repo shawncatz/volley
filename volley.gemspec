@@ -14,4 +14,16 @@ Gem::Specification.new do |gem|
   gem.name          = "volley"
   gem.require_paths = ["lib"]
   gem.version       = Volley::Version::STRING
+
+  # command line
+  gem.add_dependency "clamp"
+
+  # talk to cloud
+  gem.add_dependency "fog"
+
+  gem.add_dependency "activesupport"
+
+  gem.add_dependency "awesome_print"
+
+  gem.add_dependency "mixlib-shellout"
 end
