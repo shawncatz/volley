@@ -15,10 +15,12 @@ module Volley
       end
 
       def push(localfiles)
+        localfiles = [*localfiles].flatten
         puts ".. pushing:"
 
         remote = "#@project/#@name/#@version"
         localfiles.each do |localfile|
+          puts "LOCALFILE:#{localfile}"
           push_file(localfile, remote, File.open(localfile))
         end
         push_file("latest", "#@project/#@name", remote)

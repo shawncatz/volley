@@ -6,8 +6,9 @@ require 'clamp'
 
 module Volley
   class Command < Clamp::Command
+    parameter "PROJECT", "the project to run"
     parameter "PLAN", "the plan to run"
-    parameter "[ARG] ...", "additional arguments passed to plan of the form: name:value"
+    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
 
     option %w{-c --config}, "CONFIG", "location of the configuration file", :default => "~/.Volleyfile"
     option %w{-d --debug}, :flag, "set debug flag"
@@ -20,9 +21,9 @@ module Volley
       Volley.config.debug = debug?
 
       Volley::VolleyFile.load(config, :optional => true)
-      Volley::VolleyFile.load("Volleyfile")
+      Volley::VolleyFile.load("Volleyfile", :primary => true)
 
-      Volley::VolleyFile.run(plan, :cliargs => arg_list)
+      Volley::VolleyFile.run(project, plan, :cliargs => arg_list)
     rescue => e
       puts "error: #{e.message}"
       puts debug? ? e.backtrace.join("\n") : ""

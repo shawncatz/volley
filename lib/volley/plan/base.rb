@@ -11,6 +11,8 @@ module Volley
             :name      => name,
             :publisher => nil,
             :encrypt   => false,
+            :pack      => true,
+            :pack_type => "tgz",
         }
         @attributes = OpenStruct.new(defaults.merge(opts))
         @actions    = []
@@ -74,6 +76,14 @@ module Volley
         argument :output, :attr => true, :default => type, :convert => :boolean
       end
 
+      def pack(enable=true, options={ })
+        opt = {
+            :type => "tgz",
+        }.merge(options)
+        @attributes.pack = enable
+        @attributes.pack_type = opt[:type]
+      end
+
       # ACTIONS
 
       def action(name, &block)
@@ -83,7 +93,7 @@ module Volley
 
       def build(&block)
         action :build do
-          list = begin
+          list     = begin
             case block.arity
               when 1
                 yield @attributes.dup
@@ -91,27 +101,74 @@ module Volley
                 yield
             end
           end
-          notfound = list.reject{|f| File.file?(f) }
-          unless list.kind_of?(Array) && notfound.count == 0
-            raise "build action (in Volleyfile) must return a list of artifact paths. received: #{list} (not found: #{notfound.inspect})"
+          list     = [*list].flatten
+          notfound = list.reject { |f| File.file?(f) }
+          raise "built files not found: #{notfound.join(",")}" unless notfound.count == 0
+          @attributes.artifact_list = list
+          if config.debug
+            puts "artifact list:"
+            ap @attributes.artifact_list
           end
-          @attributes.artifacts = list
+        end
+
+        if @attributes.pack
+          @attributes.pack_dir = "/var/tmp/volley-#{Time.now.to_i}-#{$$}"
+          action :pack do
+            path = @attributes.pack_dir
+            puts "pack: #{path}"
+            Dir.mkdir(path)
+            dir = Dir.pwd
+            @attributes.artifact_list << config.volleyfile
+            @attributes.artifact_list.each do |art|
+              if art =~ /^\// && art !~ /^#{dir}/
+                puts "full path"
+                source = art
+                dest = "#{path}/#{File.basename(art)}"
+              else
+                puts "relative or in #{dir}"
+                f = art.gsub(/^#{dir}/, "").gsub(/^\//, "")
+                puts "F: #{f} ART: #{art}"
+                source = "#{dir}/#{f}"
+                dest = "#{path}/#{f}"
+              end
+              #file = art =~ /#{dir}/ ? art.gsub(/^#{dir}/, "").gsub(/^\//, "") : art
+              begin
+                #raise "file does not exist" unless File.file?("#{dir}/#{file}")
+                puts "pack file: #{source} => #{dest}" if config.debug
+                FileUtils.mkdir_p(File.dirname(dest))
+                FileUtils.copy(source, dest)
+              rescue => e
+                raise "could not copy file #{file}: #{e.message}"
+              end
+            end
+
+            Dir.chdir(path)
+            case @attributes.pack_type
+              when "tgz"
+                n = "#{args.name}-#{args.version}.tgz"
+                c = "tar cvfz #{n} *"
+                puts "command:#{c}" if config.debug
+                shellout(c)
+
+                @attributes.artifact = "#{path}/#{n}"
+              else
+                raise "unknown pack type '#{@attributes.pack_type}'"
+            end
+          end
         end
 
         if @attributes.encrypt
           action :encrypt do
-            @attributes.artifacts_unencrypted = @attributes.artifacts
-            @attributes.artifacts             = []
-            key                               = @attributes.encrypt_key
+            art = @attributes.artifact
+            key = @attributes.encrypt_key
+            cpt = "#{art}.cpt"
 
-            @attributes.artifacts_unencrypted.each do |art|
-              cpt = "#{art}.cpt"
+            raise "in action encrypt: artifact file does not exist: #{art}" unless File.file?(art)
+            raise "in action encrypt: encrypted file #{cpt} already exists" if File.file?(cpt) && !@attributes.encrypt_overwrite
+            shellout("ccrypt -e --key '#{key}' #{art}")
 
-              raise "in action encrypt: encrypted file #{cpt} already exists" if File.file?(cpt) && !@attributes.encrypt_overwrite
-              shellout("ccrypt -e --key '#{key}' #{art}")
-
-              @attributes.artifacts << cpt
-            end
+            @attributes.artifact_unencrypted = art
+            @attributes.artifact             = cpt
           end
         end
       end
@@ -145,13 +202,13 @@ module Volley
         publisher(name)
         action :push do
           options = {
-              :project => config.project,
+              :project => @attributes.project,
               :name    => args.name,
               :version => args.version,
           }.merge(o)
           klass   = @attributes.publisher_klass
           pusher  = klass.constantize.new(options)
-          pusher.push(@attributes.artifacts)
+          pusher.push(@attributes.artifact)
         end
       end
 
@@ -173,7 +230,7 @@ module Volley
         command.stdout.lines.each { |l| puts ".. out: #{l}" } if @attributes.output && command.stdout
         command.stderr.lines.each { |l| puts ".. err: #{l}" } if @attributes.output && command.stderr
         command.error!
-        {:out => command.stdout, :err => command.stderr}
+        { :out => command.stdout, :err => command.stderr }
       end
 
       private

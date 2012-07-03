@@ -15,7 +15,10 @@ module Volley
 
       def requires(name)
         v = get_option(name)
-        raise "Publisher #{me} requires option #{name}" if v.nil?
+        if v.nil?
+          ap @options
+          raise "Publisher #{me} requires option #{name}"
+        end
         v
       end
 
