@@ -7,10 +7,54 @@ module Volley
         load_configuration
       end
 
-      def config(name)
-        v = get_option(name) || get_config(name)
-        raise "Publisher #{me} requires configuration #{name}" if v.nil?
+      def push(project, name, ver, localfiles)
+        @project = project
+        @name = name
+        @version = ver
+
+        localfiles = [*localfiles].flatten
+        puts ".. pushing:" if @debug
+
+        localfiles.each do |localfile|
+          puts ".. .. #{localfile}" if @debug
+          push_file(localfile, version, File.open(localfile))
+        end
+        push_file("latest", branch, version)
+      end
+
+      def pull(project, name, ver="latest")
+        @project = project
+        @name = name
+        @version = ver
+
+        if @version == "latest"
+          @version = get_latest(@project, @name)
+        end
+
+        puts "remote: #{version}" if @debug
+        puts "remote_file: #{remote_file}" if @debug
+        pull_file(remote_file, version, "#@local/#{version}")
+
+        "#@local/#{version}"
+      end
+
+      def get_latest(project, name)
+        cur       = pull_file("latest", "#{project}/#{name}")
+        (p, n, v) = cur.split(/\//)
         v
+      end
+
+      private
+      def me
+        self.class.name.split("::").last
+      end
+
+      def branch
+        "#@project/#@name"
+      end
+
+      def version
+        "#{branch}/#@version"
       end
 
       def requires(name)
@@ -22,13 +66,8 @@ module Volley
         v
       end
 
-      def optional(name)
-        get_option(name)
-      end
-
-      private
-      def me
-        self.class.name.split("::").last
+      def optional(name, default)
+        get_option(name) || default
       end
 
       def get_option(name)

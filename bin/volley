@@ -4,30 +4,110 @@ require 'rubygems'
 require 'volley'
 require 'clamp'
 
+#Volley::VolleyFile.init
+
 module Volley
   class Command < Clamp::Command
-    parameter "PROJECT", "the project to run"
-    parameter "PLAN", "the plan to run"
-    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
-
-    option %w{-c --config}, "CONFIG", "location of the configuration file", :default => "~/.Volleyfile"
+    self.default_subcommand = "versions"
+    option %w{-c --config}, "CONFIG", "additional configuration file", :default => "~/.Volleyfile"
+    option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "Volleyfile"
     option %w{-d --debug}, :flag, "set debug flag"
-
-    def execute
-      unless File.exists?("Volleyfile")
+    def load_volleyfiles
+      unless File.exists?(primary)
         raise "could not locate Volleyfile"
       end
-
-      Volley.config.debug = debug?
-
       Volley::VolleyFile.load(config, :optional => true)
-      Volley::VolleyFile.load("Volleyfile", :primary => true)
+      Volley::VolleyFile.load(primary, :primary => true)
+    end
 
-      Volley::VolleyFile.run(project, plan, :cliargs => arg_list)
-    rescue => e
-      puts "error: #{e.message}"
-      puts debug? ? e.backtrace.join("\n") : ""
-      raise Clamp::HelpWanted, self
+    subcommand "versions", "get version list of project or project:plan from local Volleyfile or remote data store" do
+      #parameter "PROJECTPLAN", "project and plan to run, of the form project:plan"
+      #option %w{-l --local}, :flag, "display information about projects and plans for Volleyfile"
+      option %w{-r --remote}, :flag, "show versions in the datastore. filter by <project> or <project>:<name>"
+
+      def execute
+        unless File.exists?("Volleyfile")
+          raise "could not locate Volleyfile"
+        end
+        Volley::VolleyFile.load(config, :primary => true)
+        if remote?
+          (project, name) = remote.split(/:/)
+          if project
+            if name
+              # show project/name versions
+            else
+              # show project names
+            end
+          else
+            # show projects
+          end
+        else
+          Volley::Dsl::Project.projects.each do |p, project|
+            puts "project: #{p}"
+            project.plans.each do |pl, plan|
+              puts ".. #{pl}"
+            end
+          end
+        end
+      end
+    end
+    subcommand "get", "get an artifact from the data store and run it" do
+      parameter "GET", "<project>:<branch>[:<version>]:plan"
+      def execute
+        load_volleyfiles
+        (project, name, version, plan) = get.split(/[\/:\.\-]/)
+        unless plan
+          plan    = version
+          version = "latest"
+        end
+        if debug?
+          puts "project: #{project}"
+          puts "name:    #{name}"
+          puts "version: #{version}"
+          puts "plan:    #{plan}"
+        end
+        pub = Volley::Dsl.publisher
+        dir = pub.pull(project, name, version)
+        puts "changing directory: #{dir}"
+        cmd = "volley #{project}:#{plan}"
+        puts "command: #{cmd}"
+        #Dir.chdir(dir)
+        #exec(cmd)
+      end
+    end
+    subcommand "run", "run a project:plan from local Volleyfile" do
+      parameter "PROJECTPLAN", "project and plan to run, of the form project:plan"
+      parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
+
+      def execute
+        unless File.exists?("Volleyfile")
+          raise "could not locate Volleyfile"
+        end
+        Volley::VolleyFile.load(config, :primary => true)
+
+        (project, plan) = projectplan.split(/:/)
+        project         = project.to_sym
+        plan = plan.to_sym if plan
+
+        Volley.config.debug = debug?
+
+        if debug?
+          puts "project:   #{project} #{Volley::Dsl::Project.project(project)}"
+          puts "plan:      #{plan}"
+          puts "args_list: #{arg_list.join(",")}"
+        end
+
+        raise "you must specify project: [#{Volley::Dsl::Project.projects.keys.join(',')}]" unless project && Volley::Dsl::Project.project(project)
+        raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
+
+        Volley::Dsl::Project.project(project).plan(plan).call(:cliargs => arg_list)
+      rescue Interrupt => e
+        puts "Cancelled..."
+      rescue => e
+        puts "error: #{e.message}"
+        puts debug? ? e.backtrace.join("\n") : ""
+        raise Clamp::HelpWanted, self
+      end
     end
   end
 end

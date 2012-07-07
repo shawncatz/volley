@@ -6,32 +6,23 @@ module Volley
       attr_accessor :key, :secret
 
       def load_configuration
-        @key     = config(:aws_access_key_id)
-        @secret  = config(:aws_secret_access_key)
-        @bucket  = config(:bucket)
-        @project = requires(:project)
-        @name    = requires(:name)
-        @version = requires(:version)
-      end
-
-      def push(localfiles)
-        localfiles = [*localfiles].flatten
-        puts ".. pushing:"
-
-        remote = "#@project/#@name/#@version"
-        localfiles.each do |localfile|
-          puts "LOCALFILE:#{localfile}"
-          push_file(localfile, remote, File.open(localfile))
-        end
-        push_file("latest", "#@project/#@name", remote)
-        #push_file("Volleyfile", "#@project/#@name", File.open("Volleyfile"))
-      end
-
-      def pull
-
+        @key       = requires(:aws_access_key_id)
+        @secret    = requires(:aws_secret_access_key)
+        @bucket    = requires(:bucket)
+        @local     = requires(:local)
+        @debug     = optional(:debug, false)
+        @encrypted = optional(:encrypted, false)
       end
 
       private
+
+      #def remote
+      #  "#@project/#@name/#@version"
+      #end
+
+      def remote_file
+        "#@name-#@version.tgz#{".cpt" if @encrypted}"
+      end
 
       def push_file(name, dir, contents)
         puts ".. #{name}"
@@ -39,18 +30,39 @@ module Volley
         path = "#{dir}/#{file}"
         puts ".. -> s3:#@bucket/#{path}"
         @connection ||= Fog::Storage.new(
-            :provider => "AWS",
-            :aws_access_key_id => @key,
+            :provider              => "AWS",
+            :aws_access_key_id     => @key,
             :aws_secret_access_key => @secret,
         )
-        @dir ||= @connection.directories.create({:key => @bucket})
-        s3f = @dir.files.create(
-            :key => "#{path}",
-            :body => contents,
+        @dir        ||= @connection.directories.create({ :key => @bucket })
+        s3f         = @dir.files.create(
+            :key    => "#{path}",
+            :body   => contents,
             :public => true
         )
-        puts ".. => #{s3f.public_url.gsub("%2F","/")}"
+        puts ".. => #{s3f.public_url.gsub("%2F", "/")}"
         "#{path}"
+      end
+
+      def pull_file(name, dir, ldir=nil)
+        puts ".. <- s3:#@bucket/#{dir}/#{name}"
+        if ldir
+          FileUtils.mkdir_p(ldir)
+        end
+        @connection ||= Fog::Storage.new(
+            :provider              => "AWS",
+            :aws_access_key_id     => @key,
+            :aws_secret_access_key => @secret,
+        )
+        f           = @connection.directories.get(@bucket).files.get("#{dir}/#{name}")
+        contents    = f.body
+        if ldir
+          lfile = "#{ldir}/#{name}"
+          File.open(lfile, "w") { |lf| lf.write(contents) }
+          puts ".. <= #{lfile}"
+        else
+          contents
+        end
       end
     end
   end

@@ -13,6 +13,7 @@ module Volley
             :encrypt   => false,
             :pack      => true,
             :pack_type => "tgz",
+            :output    => false,
         }
         @attributes = OpenStruct.new(defaults.merge(opts))
         @actions    = []
@@ -77,10 +78,10 @@ module Volley
       end
 
       def pack(enable=true, options={ })
-        opt = {
+        opt                   = {
             :type => "tgz",
         }.merge(options)
-        @attributes.pack = enable
+        @attributes.pack      = enable
         @attributes.pack_type = opt[:type]
       end
 
@@ -105,35 +106,28 @@ module Volley
           notfound = list.reject { |f| File.file?(f) }
           raise "built files not found: #{notfound.join(",")}" unless notfound.count == 0
           @attributes.artifact_list = list
-          if config.debug
-            puts "artifact list:"
-            ap @attributes.artifact_list
-          end
+          @attributes.artifact_list << config.volleyfile
         end
 
         if @attributes.pack
-          @attributes.pack_dir = "/var/tmp/volley-#{Time.now.to_i}-#{$$}"
           action :pack do
-            path = @attributes.pack_dir
-            puts "pack: #{path}"
+            path = @attributes.pack_dir = "/var/tmp/volley-#{Time.now.to_i}-#{$$}"
             Dir.mkdir(path)
             dir = Dir.pwd
-            @attributes.artifact_list << config.volleyfile
+
             @attributes.artifact_list.each do |art|
               if art =~ /^\// && art !~ /^#{dir}/
-                puts "full path"
+                # file is full path and not in current directory
                 source = art
-                dest = "#{path}/#{File.basename(art)}"
+                dest   = "#{path}/#{File.basename(art)}"
               else
-                puts "relative or in #{dir}"
-                f = art.gsub(/^#{dir}/, "").gsub(/^\//, "")
-                puts "F: #{f} ART: #{art}"
+                # file is relative path or in current directory
+                f      = art.gsub(/^#{dir}/, "").gsub(/^\//, "")
                 source = "#{dir}/#{f}"
-                dest = "#{path}/#{f}"
+                dest   = "#{path}/#{f}"
               end
-              #file = art =~ /#{dir}/ ? art.gsub(/^#{dir}/, "").gsub(/^\//, "") : art
+
               begin
-                #raise "file does not exist" unless File.file?("#{dir}/#{file}")
                 puts "pack file: #{source} => #{dest}" if config.debug
                 FileUtils.mkdir_p(File.dirname(dest))
                 FileUtils.copy(source, dest)
@@ -198,8 +192,7 @@ module Volley
         #end
       end
 
-      def push(name, o={ })
-        publisher(name)
+      def push(o={ })
         action :push do
           options = {
               :project => @attributes.project,
@@ -212,8 +205,31 @@ module Volley
         end
       end
 
-      def pull(name)
-        publisher(name)
+      def pull(o={ })
+        action :pull do
+          options = {
+              :project => @attributes.project,
+              :name    => args.name,
+              :version => args.version,
+          }.merge(o)
+          klass   = @attributes.publisher_klass
+          puller  = klass.constantize.new(options)
+          puller.pull
+        end
+      end
+
+      def volley(opts={ })
+        o          = {
+            :project => @attributes.project,
+            :name    => args.name,
+            :version => "current",
+            :plan    => "deploy",
+        }.merge(opts)
+        actionname = [o[:project], o[:name], o[:version], o[:plan]].join("-")
+        action actionname do
+          puts "VOLLEY: #{o[:project]} #{o[:name]} #{o[:version]} #{o[:plan]}"
+          #shellout("")
+        end
       end
 
       def command(*args)
@@ -234,15 +250,6 @@ module Volley
       end
 
       private
-
-      def publisher(name)
-        raise "publisher set multiple times: #{@attributes.publisher}, #{name}" if @attributes.publisher
-        @attributes.publisher       = name
-        klass                       = "Volley::Publisher::#{name.capitalize}"
-        @attributes.publisher_klass = klass
-        puts "loading publisher: #{name} (#{klass})" if config.debug
-        require "volley/publisher/#{name}"
-      end
 
       def boolean(value)
         case value.class
