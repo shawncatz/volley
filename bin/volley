@@ -12,6 +12,8 @@ module Volley
     option %w{-c --config}, "CONFIG", "additional configuration file", :default => "~/.Volleyfile"
     option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "Volleyfile"
     option %w{-d --debug}, :flag, "set debug flag"
+    option %w{-f --fork}, :flag, "fork process into background"
+
     def load_volleyfiles
       unless File.exists?(primary)
         raise "could not locate Volleyfile"
@@ -67,12 +69,15 @@ module Volley
           puts "plan:    #{plan}"
         end
         pub = Volley::Dsl.publisher
-        dir = pub.pull(project, name, version)
+        file = pub.pull(project, name, version)
+        dir = File.dirname(file)
         puts "changing directory: #{dir}"
         cmd = "volley #{project}:#{plan}"
         puts "command: #{cmd}"
-        #Dir.chdir(dir)
-        #exec(cmd)
+        FileUtils.mkdir_p("#{dir}/unpack")
+        Dir.chdir("#{dir}/unpack")
+        puts %x{tar xvfz #{file}}
+        exec(cmd)
       end
     end
     subcommand "run", "run a project:plan from local Volleyfile" do

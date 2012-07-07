@@ -35,7 +35,7 @@ module Volley
         puts "remote_file: #{remote_file}" if @debug
         pull_file(remote_file, version, "#@local/#{version}")
 
-        "#@local/#{version}"
+        "#@local/#{version}/#{remote_file}"
       end
 
       def get_latest(project, name)
