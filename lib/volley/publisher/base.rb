@@ -13,10 +13,10 @@ module Volley
         @version = ver
 
         localfiles = [*localfiles].flatten
-        puts ".. pushing:" if @debug
+        Volley::Log.info".. pushing:" if @debug
 
         localfiles.each do |localfile|
-          puts ".. .. #{localfile}" if @debug
+          Volley::Log.info".. .. #{localfile}" if @debug
           push_file(localfile, version, File.open(localfile))
         end
         push_file("latest", branch, version)
@@ -31,8 +31,8 @@ module Volley
           @version = get_latest(@project, @name)
         end
 
-        puts "remote: #{version}" if @debug
-        puts "remote_file: #{remote_file}" if @debug
+        Volley::Log.info"remote: #{version}" if @debug
+        Volley::Log.info"remote_file: #{remote_file}" if @debug
         pull_file(remote_file, version, "#@local/#{version}")
 
         "#@local/#{version}/#{remote_file}"

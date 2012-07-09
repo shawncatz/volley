@@ -4,7 +4,7 @@ module Volley
 
       #def push(localfiles)
       #  localfiles = [*localfiles].flatten
-      #  puts ".. pushing:"
+      #  Volley::Log.info".. pushing:"
       #  remote = "#@project/#@name/#@version"
       #  localfiles.each do |localfile|
       #    push_file(localfile, "#@directory/#{remote}")
@@ -33,11 +33,11 @@ module Volley
       end
 
       def push_file(local, path, content = nil)
-        puts "content=#{content.inspect}"
+        Volley::Log.info"content=#{content.inspect}"
         local = File.basename(local) if local =~ /^\//
         dest = "#@directory/#{path}"
         file = "#{dest}/#{local}"
-        puts ".. -> #{dest}"
+        Volley::Log.info".. -> #{dest}"
         FileUtils.mkdir_p(File.dirname(file))
         content = content.read if content.is_a?(File)
         if content
@@ -45,25 +45,25 @@ module Volley
         else
           FileUtils.copy(local, file)
         end
-        puts ".. => #{file}"
+        Volley::Log.info".. => #{file}"
       end
 
       def pull_file(file, path, ldir=nil)
         remote = "#@directory/#{path}"
-        puts ".. <- #{remote}"
+        Volley::Log.info".. <- #{remote}/#{file}"
         if ldir
           FileUtils.mkdir_p(ldir)
         end
         if ldir
-          puts ".. <= #@local/#{path}"
-          #FileUtils.copy(remote, "#@local/#{path}")
+          Volley::Log.info".. <= #@local/#{path}/#{file}"
+          FileUtils.copy("#{remote}/#{file}", "#@local/#{path}")
         else
           File.open("#{remote}/#{file}") { |f| f.read }
         end
       end
 
       #def pull_file(name, dir, ldir=nil)
-      #  puts ".. <- s3:#@bucket/#{dir}/#{name}"
+      #  Volley::Log.info".. <- s3:#@bucket/#{dir}/#{name}"
       #  if ldir
       #    FileUtils.mkdir_p(ldir)
       #  end
@@ -77,7 +77,7 @@ module Volley
       #  if ldir
       #    lfile = "#{ldir}/#{name}"
       #    File.open(lfile, "w") { |lf| lf.write(contents) }
-      #    puts ".. <= #{lfile}"
+      #    Volley::Log.info".. <= #{lfile}"
       #  else
       #    contents
       #  end

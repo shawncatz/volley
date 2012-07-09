@@ -9,29 +9,40 @@ require 'clamp'
 module Volley
   class Command < Clamp::Command
     self.default_subcommand = "versions"
-    option %w{-c --config}, "CONFIG", "additional configuration file", :default => "~/.Volleyfile"
+    option %w{-c --config}, "CONFIG", "configuration file", :default => "~/.Volleyfile"
     option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "Volleyfile"
     option %w{-d --debug}, :flag, "set debug flag"
-    option %w{-f --fork}, :flag, "fork process into background"
 
     def load_volleyfiles
-      unless File.exists?(primary)
-        raise "could not locate Volleyfile"
-      end
+      raise "could not locate Volleyfile" unless File.exists?(primary)
       Volley::VolleyFile.load(config, :optional => true)
       Volley::VolleyFile.load(primary, :primary => true)
     end
 
-    subcommand "versions", "get version list of project or project:plan from local Volleyfile or remote data store" do
+    subcommand "list", "list projects and plans from local Volleyfile" do
+      def execute
+        load_volleyfiles
+        Volley::Dsl::Project.projects.each do |p, project|
+          Volley::Log.info "project: #{p}"
+          project.plans.each do |pl, plan|
+           Volley::Log.info ".. #{pl}"
+          end
+        end
+      rescue Interrupt => e
+        Volley::Log.warn "Cancelled..."
+      rescue => e
+        Volley::Log.error "error: #{e.message}"
+        Volley::Log.error e if debug?
+        raise Clamp::HelpWanted, self
+      end
+    end
+
+    subcommand "versions", "get version list of project or project:plan from remote data store" do
       #parameter "PROJECTPLAN", "project and plan to run, of the form project:plan"
       #option %w{-l --local}, :flag, "display information about projects and plans for Volleyfile"
-      option %w{-r --remote}, :flag, "show versions in the datastore. filter by <project> or <project>:<name>"
 
       def execute
-        unless File.exists?("Volleyfile")
-          raise "could not locate Volleyfile"
-        end
-        Volley::VolleyFile.load(config, :primary => true)
+        load_volleyfiles
         if remote?
           (project, name) = remote.split(/:/)
           if project
@@ -44,19 +55,22 @@ module Volley
             # show projects
           end
         else
-          Volley::Dsl::Project.projects.each do |p, project|
-            puts "project: #{p}"
-            project.plans.each do |pl, plan|
-              puts ".. #{pl}"
-            end
-          end
         end
+      rescue Interrupt => e
+        Volley::Log.warn "Cancelled..."
+      rescue => e
+        Volley::Log.error "error: #{e.message}"
+        Volley::Log.error e if debug?
+        raise Clamp::HelpWanted, self
       end
     end
     subcommand "get", "get an artifact from the data store and run it" do
+      option %w{-f --fork}, :flag, "fork process into background"
       parameter "GET", "<project>:<branch>[:<version>]:plan"
+      parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
       def execute
         load_volleyfiles
+
         (project, name, version, plan) = get.split(/[\/:\.\-]/)
         unless plan
           plan    = version
@@ -71,24 +85,29 @@ module Volley
         pub = Volley::Dsl.publisher
         file = pub.pull(project, name, version)
         dir = File.dirname(file)
-        puts "changing directory: #{dir}"
-        cmd = "volley #{project}:#{plan}"
-        puts "command: #{cmd}"
+        Volley::Log.info "changing directory: #{dir} (#{file})"
+        cmd = "volley run #{project}:#{plan} name:#{name} #{arg_list.join(' ')}"
+        Volley::Log.info "command: #{cmd}"
         FileUtils.mkdir_p("#{dir}/unpack")
         Dir.chdir("#{dir}/unpack")
-        puts %x{tar xvfz #{file}}
+        tgz = %x{tar xvfz #{file}}
+        File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
         exec(cmd)
+      rescue Interrupt => e
+        Volley::Log.warn "Cancelled..."
+      rescue => e
+        Volley::Log.error "error: #{e.message}"
+        Volley::Log.error e if debug?
+        raise Clamp::HelpWanted, self
       end
     end
     subcommand "run", "run a project:plan from local Volleyfile" do
+      option %w{-f --fork}, :flag, "fork process into background"
       parameter "PROJECTPLAN", "project and plan to run, of the form project:plan"
       parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
 
       def execute
-        unless File.exists?("Volleyfile")
-          raise "could not locate Volleyfile"
-        end
-        Volley::VolleyFile.load(config, :primary => true)
+        load_volleyfiles
 
         (project, plan) = projectplan.split(/:/)
         project         = project.to_sym
@@ -97,20 +116,20 @@ module Volley
         Volley.config.debug = debug?
 
         if debug?
-          puts "project:   #{project} #{Volley::Dsl::Project.project(project)}"
+          puts "project:   #{project} #{Volley::Dsl.project(project)}"
           puts "plan:      #{plan}"
           puts "args_list: #{arg_list.join(",")}"
         end
 
-        raise "you must specify project: [#{Volley::Dsl::Project.projects.keys.join(',')}]" unless project && Volley::Dsl::Project.project(project)
+        raise "you must specify project: [#{Volley::Dsl.projects.keys.join(',')}]" unless project && Volley::Dsl.project(project)
         raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
 
         Volley::Dsl::Project.project(project).plan(plan).call(:cliargs => arg_list)
       rescue Interrupt => e
-        puts "Cancelled..."
+        Volley::Log.warn "Cancelled..."
       rescue => e
-        puts "error: #{e.message}"
-        puts debug? ? e.backtrace.join("\n") : ""
+        Volley::Log.error "error: #{e.message}"
+        Volley::Log.error e if debug?
         raise Clamp::HelpWanted, self
       end
     end

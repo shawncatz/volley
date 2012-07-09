@@ -14,6 +14,10 @@ module Volley
       def project(name)
         Volley::Dsl::Project.get(name)
       end
+
+      def projects
+        Volley::Dsl::Project.projects
+      end
     end
   end
 end

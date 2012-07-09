@@ -10,7 +10,7 @@ module Volley
             raise "only one publisher can be defined at a time"
           else
             klass = "Volley::Publisher::#{name.to_s.camelize}"
-            puts "loading publisher: #{name} (#{klass})" if Volley.config.debug
+            Volley::Log.info "loading publisher: #{name} (#{klass})" if Volley.config.debug
             require "volley/publisher/#{name}"
             @publisher = klass.constantize.new(o)
           end

@@ -16,19 +16,15 @@ module Volley
 
       private
 
-      #def remote
-      #  "#@project/#@name/#@version"
-      #end
-
       def remote_file
         "#@name-#@version.tgz#{".cpt" if @encrypted}"
       end
 
       def push_file(name, dir, contents)
-        puts ".. #{name}"
+        Volley::Log.info ".. #{name}"
         file = File.basename(name)
         path = "#{dir}/#{file}"
-        puts ".. -> s3:#@bucket/#{path}"
+        Volley::Log.info ".. -> s3:#@bucket/#{path}"
         @connection ||= Fog::Storage.new(
             :provider              => "AWS",
             :aws_access_key_id     => @key,
@@ -40,12 +36,12 @@ module Volley
             :body   => contents,
             :public => true
         )
-        puts ".. => #{s3f.public_url.gsub("%2F", "/")}"
+        Volley::Log.info ".. => #{s3f.public_url.gsub("%2F", "/")}"
         "#{path}"
       end
 
       def pull_file(name, dir, ldir=nil)
-        puts ".. <- s3:#@bucket/#{dir}/#{name}"
+        Volley::Log.info ".. <- s3:#@bucket/#{dir}/#{name}"
         if ldir
           FileUtils.mkdir_p(ldir)
         end
@@ -59,7 +55,7 @@ module Volley
         if ldir
           lfile = "#{ldir}/#{name}"
           File.open(lfile, "w") { |lf| lf.write(contents) }
-          puts ".. <= #{lfile}"
+          Volley::Log.info ".. <= #{lfile}"
         else
           contents
         end

@@ -28,9 +28,9 @@ module Volley
 
       def run_actions
         ap Volley.config if Volley.config.debug
-        puts "running actions..."
+        Volley::Log.info "running actions..."
         @actions.each do |act|
-          puts "running action: #{act[:name]}"
+          Volley::Log.info "running action: #{act[:name]}"
           ap act if Volley.config.debug
           self.instance_eval(&act[:block])
         end
@@ -38,7 +38,7 @@ module Volley
       end
 
       def method_missing(n, *args)
-        puts "mm: #{n} #{args.join(',')}"
+        Volley::Log.warn "** plan DSL does not support method: #{n} #{args.join(',')}"
       end
 
       def args
@@ -120,7 +120,7 @@ module Volley
               end
 
               begin
-                puts "pack file: #{source} => #{dest}" if Volley.config.debug
+                Volley::Log.debug "pack file: #{source} => #{dest}"
                 FileUtils.mkdir_p(File.dirname(dest))
                 FileUtils.copy(source, dest)
               rescue => e
@@ -133,7 +133,7 @@ module Volley
               when "tgz"
                 n = "#{args.name}-#{args.version}.tgz"
                 c = "tar cvfz #{n} *"
-                puts "command:#{c}" if Volley.config.debug
+                Volley::Log.debug "command:#{c}"
                 shellout(c)
 
                 @attributes.artifact = "#{path}/#{n}"
@@ -161,21 +161,21 @@ module Volley
 
       def push(pub_name)
         action :push do
-          publisher = Volley::Dsl::Publisher.publisher(pub_name)
+          publisher = Volley::Dsl.publisher
           publisher.push(@project.name, args.name, args.version, @attributes.artifact)
         end
       end
 
       def volley(opts={ })
         o          = {
-            :project => @attributes.project,
+            :project => @project.name,
             :name    => args.name,
-            :version => "current",
+            :version => "latest",
             :plan    => "deploy",
         }.merge(opts)
         actionname = [o[:project], o[:name], o[:version], o[:plan]].join("-")
         action actionname do
-          puts "VOLLEY: #{o[:project]} #{o[:name]} #{o[:version]} #{o[:plan]}"
+          Volley::Log.info "VOLLEY: #{o[:project]} #{o[:name]} #{o[:version]} #{o[:plan]}"
           #shellout("")
         end
       end
@@ -191,8 +191,8 @@ module Volley
         require "mixlib/shellout"
         command = ::Mixlib::ShellOut.new(*args)
         command.run_command
-        command.stdout.lines.each { |l| puts ".. out: #{l}" } if @attributes.output && command.stdout
-        command.stderr.lines.each { |l| puts ".. err: #{l}" } if @attributes.output && command.stderr
+        command.stdout.lines.each { |l| Volley::Log.info ".. out: #{l}" } if @attributes.output && command.stdout
+        command.stderr.lines.each { |l| Volley::Log.info ".. err: #{l}" } if @attributes.output && command.stderr
         command.error!
         { :out => command.stdout, :err => command.stderr }
       end

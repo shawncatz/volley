@@ -6,6 +6,7 @@ module Volley
       end
 
       def load(filename, options={ })
+        #Volley::Log.info"LOAD: #{filename} #{options.inspect}"
         @projects ||= { }
         file      = File.expand_path(filename)
         config.volleyfile = "#{Dir.pwd}/Volleyfile" if options[:primary]
@@ -30,6 +31,10 @@ module Volley
 
       def publisher(name, o={}, &block)
         Volley::Dsl::Publisher.publisher(name, o, &block)
+      end
+
+      def log(level, dest)
+        Volley::Log.add(level, dest)
       end
     end
   end
