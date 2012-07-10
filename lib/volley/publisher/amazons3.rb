@@ -17,7 +17,7 @@ module Volley
       private
 
       def remote_file
-        "#@name-#@version.tgz#{".cpt" if @encrypted}"
+        "#@branch-#@version.tgz#{".cpt" if @encrypted}"
       end
 
       def push_file(name, dir, contents)

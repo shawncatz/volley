@@ -2,20 +2,6 @@ module Volley
   module Publisher
     class Local < Base
 
-      #def push(localfiles)
-      #  localfiles = [*localfiles].flatten
-      #  Volley::Log.info".. pushing:"
-      #  remote = "#@project/#@name/#@version"
-      #  localfiles.each do |localfile|
-      #    push_file(localfile, "#@directory/#{remote}")
-      #  end
-      #  push_file("latest", "#@directory/#@project/#@name", remote)
-      #end
-      #
-      #def pull
-      #
-      #end
-
       private
 
       def load_configuration
@@ -24,12 +10,8 @@ module Volley
         @debug     = optional(:debug, false)
       end
 
-      #def remote
-      #  "#@project/#@name/#@version"
-      #end
-
       def remote_file
-        "#@name-#@version.tgz#{".cpt" if @encrypted}"
+        "#@branch-#@version.tgz#{".cpt" if @encrypted}"
       end
 
       def push_file(local, path, content = nil)
@@ -61,27 +43,6 @@ module Volley
           File.open("#{remote}/#{file}") { |f| f.read }
         end
       end
-
-      #def pull_file(name, dir, ldir=nil)
-      #  Volley::Log.info".. <- s3:#@bucket/#{dir}/#{name}"
-      #  if ldir
-      #    FileUtils.mkdir_p(ldir)
-      #  end
-      #  @connection ||= Fog::Storage.new(
-      #      :provider              => "AWS",
-      #      :aws_access_key_id     => @key,
-      #      :aws_secret_access_key => @secret,
-      #  )
-      #  f           = @connection.directories.get(@bucket).files.get("#{dir}/#{name}")
-      #  contents    = f.body
-      #  if ldir
-      #    lfile = "#{ldir}/#{name}"
-      #    File.open(lfile, "w") { |lf| lf.write(contents) }
-      #    Volley::Log.info".. <= #{lfile}"
-      #  else
-      #    contents
-      #  end
-      #end
     end
   end
 end

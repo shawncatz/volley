@@ -33,8 +33,8 @@ project :myproject do
     # in key:value pairs.
     #
     # By specifying the following:
-    #   argument :name
-    # You will then have access to args.name within your plan's actions
+    #   argument :branch
+    # You will then have access to args.branch within your plan's actions
     #
     # Argument options
     #   :default      set the default value for the argument
@@ -84,11 +84,11 @@ project :myproject do
       # this is a wrapper around Mixlib::Shellout
       shellout("rake #{clean} build")
 
-      # the 'name' argument is generally set to the branch name.
-      # by using the ||= operator here, we can also set the 'name' argument on the command line.
-      args.name    ||= source.branch
+      # the 'branch' argument is generally set to the branch name.
+      # by using the ||= operator here, we can also set the 'branch' argument on the command line.
+      args.branch    ||= source.branch
       # the 'version' argument is generally set to the source control revision number.
-      # by using the ||= operator here, we can also set the 'name' argument on the command line.
+      # by using the ||= operator here, we can also set the 'branch' argument on the command line.
       args.version ||= source.revision
 
       final = "target/awesome.war"

@@ -27,6 +27,8 @@ module Volley
 
       attr_reader :plans
       attr_reader :name
+      attr_reader :source
+
       def initialize(name)
         @name = name
         @plans = {}
@@ -45,6 +47,13 @@ module Volley
           @plans[n] ||= Volley::Dsl::Plan.new(name, options, &block)
         end
         @plans[n]
+      end
+
+      def scm(name, o={}, &block)
+        n = name.to_s
+        require "volley/scm/#{n}"
+        klass = "Volley::Scm::#{n.camelize}".constantize
+        @source = klass.new(o)
       end
 
       #def encrypt(tf, o={})

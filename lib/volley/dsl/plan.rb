@@ -4,7 +4,7 @@ module Volley
   module Dsl
     class Plan
       def initialize(name, o={ }, &block)
-        options    = {
+        options = {
             :name      => name,
             :output    => false,
             :project   => nil,
@@ -13,15 +13,15 @@ module Volley
             :pack_type => "tgz",
         }.merge(o)
         raise "project instance must be set" if options[:project].nil?
-        @project = options[:project]
-        @block = block
+        @project    = options[:project]
+        @block      = block
         @attributes = OpenStruct.new(options)
         @args       = OpenStruct.new
         @actions    = []
       end
 
       def call(options)
-        @cliargs    = options[:cliargs].inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h } if options[:cliargs]
+        @cliargs = options[:cliargs].inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h } if options[:cliargs]
         instance_eval &@block
         run_actions
       end
@@ -39,10 +39,15 @@ module Volley
 
       def method_missing(n, *args)
         Volley::Log.warn "** plan DSL does not support method: #{n} #{args.join(',')}"
+        raise "not supported"
       end
 
       def args
         @args
+      end
+
+      def source
+        @project.source or raise "SCM not configured"
       end
 
       def argument(name, opts={ })
@@ -84,7 +89,7 @@ module Volley
         @actions << { :name => n, :block => block }
       end
 
-      def build(&block)
+      def push(&block)
         action :build do
           list     = begin
             case block.arity
@@ -131,7 +136,7 @@ module Volley
             Dir.chdir(path)
             case @attributes.pack_type
               when "tgz"
-                n = "#{args.name}-#{args.version}.tgz"
+                n = "#{args.branch}-#{args.version}.tgz"
                 c = "tar cvfz #{n} *"
                 Volley::Log.debug "command:#{c}"
                 shellout(c)
@@ -157,26 +162,48 @@ module Volley
             @attributes.artifact             = cpt
           end
         end
-      end
 
-      def push(pub_name)
         action :push do
           publisher = Volley::Dsl.publisher
-          publisher.push(@project.name, args.name, args.version, @attributes.artifact)
+          publisher.push(@project.name, args.branch, args.version, @attributes.artifact)
         end
       end
 
+      #def pull
+      #  action :download do
+      #    pr = @project.name
+      #    br = args.branch
+      #    ve = args.version
+      #
+      #    pub = Volley::Dsl.publisher
+      #    file = pub.pull(pr, br, ve)
+      #
+      #    dir = File.dirname(file)
+      #    Volley::Log.info "changing directory: #{dir} (#{file})"
+      #    cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
+      #
+      #    Volley::Log.info "command: #{cmd}"
+      #    FileUtils.mkdir_p("#{dir}/unpack")
+      #    Dir.chdir("#{dir}/unpack")
+      #    tgz = %x{tar xvfz #{file} 2>/dev/null}
+      #    File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
+      #  end
+      #end
+
       def volley(opts={ })
-        o          = {
+        o = {
             :project => @project.name,
-            :name    => args.name,
+            :branch  => args.branch,
             :version => "latest",
-            :plan    => "deploy",
+            :plan    => "pull",
         }.merge(opts)
-        actionname = [o[:project], o[:name], o[:version], o[:plan]].join("-")
+
+        actionname = [o[:project], o[:branch], o[:version], o[:plan]].join("-")
         action actionname do
-          Volley::Log.info "VOLLEY: #{o[:project]} #{o[:name]} #{o[:version]} #{o[:plan]}"
-          #shellout("")
+          #Volley::Log.info "VOLLEY: #{o[:project]} #{o[:branch]} #{o[:version]} #{o[:plan]}"
+          cmd = ["volley get"]
+          cmd << [o[:project], o[:branch], o[:version], o[:plan]].join(":")
+          shellout(cmd.join(" "))
         end
       end
 

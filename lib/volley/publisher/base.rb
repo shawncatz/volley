@@ -7,9 +7,9 @@ module Volley
         load_configuration
       end
 
-      def push(project, name, ver, localfiles)
+      def push(project, br, ver, localfiles)
         @project = project
-        @name = name
+        @branch = br
         @version = ver
 
         localfiles = [*localfiles].flatten
@@ -20,15 +20,16 @@ module Volley
           push_file(localfile, version, File.open(localfile))
         end
         push_file("latest", branch, version)
+        push_file("Volleyfile", version, File.open(Volley.config.volleyfile))
       end
 
-      def pull(project, name, ver="latest")
+      def pull(project, branch, ver="latest")
         @project = project
-        @name = name
+        @branch = branch
         @version = ver
 
         if @version == "latest"
-          @version = get_latest(@project, @name)
+          @version = get_latest(@project, @branch)
         end
 
         Volley::Log.info"remote: #{version}" if @debug
@@ -38,8 +39,8 @@ module Volley
         "#@local/#{version}/#{remote_file}"
       end
 
-      def get_latest(project, name)
-        cur       = pull_file("latest", "#{project}/#{name}")
+      def get_latest(project, branch)
+        cur       = pull_file("latest", "#{project}/#{branch}")
         (p, n, v) = cur.split(/\//)
         v
       end
@@ -50,7 +51,7 @@ module Volley
       end
 
       def branch
-        "#@project/#@name"
+        "#@project/#@branch"
       end
 
       def version

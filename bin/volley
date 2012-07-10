@@ -8,7 +8,7 @@ require 'clamp'
 
 module Volley
   class Command < Clamp::Command
-    self.default_subcommand = "versions"
+    self.default_subcommand = "list"
     option %w{-c --config}, "CONFIG", "configuration file", :default => "~/.Volleyfile"
     option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "Volleyfile"
     option %w{-d --debug}, :flag, "set debug flag"
@@ -44,10 +44,10 @@ module Volley
       def execute
         load_volleyfiles
         if remote?
-          (project, name) = remote.split(/:/)
+          (project, branch) = remote.split(/:/)
           if project
-            if name
-              # show project/name versions
+            if branch
+              # show project/branch versions
             else
               # show project names
             end
@@ -71,26 +71,26 @@ module Volley
       def execute
         load_volleyfiles
 
-        (project, name, version, plan) = get.split(/[\/:\.\-]/)
+        (project, branch, version, plan) = get.split(/[\/:\.\-]/)
         unless plan
           plan    = version
           version = "latest"
         end
         if debug?
           puts "project: #{project}"
-          puts "name:    #{name}"
+          puts "branch:    #{branch}"
           puts "version: #{version}"
           puts "plan:    #{plan}"
         end
         pub = Volley::Dsl.publisher
-        file = pub.pull(project, name, version)
+        file = pub.pull(project, branch, version)
         dir = File.dirname(file)
         Volley::Log.info "changing directory: #{dir} (#{file})"
-        cmd = "volley run #{project}:#{plan} name:#{name} #{arg_list.join(' ')}"
+        cmd = "volley run #{project}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
         Volley::Log.info "command: #{cmd}"
         FileUtils.mkdir_p("#{dir}/unpack")
         Dir.chdir("#{dir}/unpack")
-        tgz = %x{tar xvfz #{file}}
+        tgz = %x{tar xvfz #{file} 2>/dev/null}
         File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
         exec(cmd)
       rescue Interrupt => e
