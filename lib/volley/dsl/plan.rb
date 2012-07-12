@@ -213,26 +213,26 @@ module Volley
         end
       end
 
-      #def pull
-      #  action :download do
-      #    pr = @project.name
-      #    br = args.branch
-      #    ve = args.version
-      #
-      #    pub = Volley::Dsl.publisher
-      #    file = pub.pull(pr, br, ve)
-      #
-      #    dir = File.dirname(file)
-      #    Volley::Log.info "changing directory: #{dir} (#{file})"
-      #    cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
-      #
-      #    Volley::Log.info "command: #{cmd}"
-      #    FileUtils.mkdir_p("#{dir}/unpack")
-      #    Dir.chdir("#{dir}/unpack")
-      #    tgz = %x{tar xvfz #{file} 2>/dev/null}
-      #    File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
-      #  end
-      #end
+      def pull
+        action :download do
+          pr = @project.name
+          br = args.branch
+          ve = args.version
+
+          pub = Volley::Dsl.publisher
+          file = pub.pull(pr, br, ve)
+
+          dir = File.dirname(file)
+          Volley::Log.info "changing directory: #{dir} (#{file})"
+          cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
+
+          Volley::Log.info "command: #{cmd}"
+          FileUtils.mkdir_p("#{dir}/unpack")
+          Dir.chdir("#{dir}/unpack")
+          tgz = %x{tar xvfz #{file} 2>/dev/null}
+          File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
+        end
+      end
 
       #def volley(opts={ })
       #  o = {

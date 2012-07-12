@@ -21,8 +21,7 @@ module Volley
           if data["URL"] =~ /\/trunk/
             "trunk"
           elsif  data["URL"] =~ /\/branches\//
-            m = data["URL"].match(/\/branches\/([^\/]+)\//)
-            ap m
+            m = data["URL"].match(/\/branches\/([^\/]+)\/*/)
             m[1]
           else
             nil

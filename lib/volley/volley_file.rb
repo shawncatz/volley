@@ -3,7 +3,7 @@ module Volley
     class << self
       def init
         @loaded = {}
-        ["~/.Volleyfile", "~/.volleyfile", "/etc/Volleyfile", "../../../conf/common.volleyfile"].each do |f|
+        ["~/.Volleyfile", "/etc/Volleyfile", "../../../conf/common.volleyfile"].each do |f|
           file = File.expand_path(f, __FILE__)
           @loaded[file] ||= load(file, :optional => true)
         end
@@ -16,7 +16,7 @@ module Volley
         config.volleyfile = file if options[:primary]
 
         if File.file?(file)
-          @loaded[file] ||= instance_eval(File.read(file), "Volleyfile")
+          @loaded[file] ||= instance_eval(File.read(file), file)
         else
           raise "cannot read file" unless options[:optional]
         end
