@@ -5,6 +5,7 @@ require 'volley'
 require 'clamp'
 
 Volley::VolleyFile.init
+STDOUT.sync = true
 
 module Volley
   class Command < Clamp::Command
