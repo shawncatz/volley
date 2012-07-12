@@ -1,22 +1,39 @@
-
 module Volley
   module Publisher
     class Base
-      def initialize(options={})
-        @options = {}.merge(options)
+      def initialize(options={ })
+        @options = {
+            :overwrite => false,
+        }.merge(options)
         load_configuration
+      end
+
+      def projects
+        raise "not implemented"
+      end
+
+      def volleyfile(desc={ })
+        @project = desc[:project]
+        @branch  = desc[:branch]
+        @version = desc[:version]||get_latest(@project, @branch)
+        contents = pull_file("Volleyfile", version)
+        dest     = @options[:destination] || "/tmp/Volleyfile-#{Time.now.to_i}-#{$$}"
+        raise "File #{dest} already exists" if File.exists?(dest)
+        Volley::Log.debug("saving Volleyfile: #{dest}")
+        File.open(dest, "w") { |f| f.write(contents) }
+        dest
       end
 
       def push(project, br, ver, localfiles)
         @project = project
-        @branch = br
+        @branch  = br
         @version = ver
 
         localfiles = [*localfiles].flatten
-        Volley::Log.info".. pushing:" if @debug
+        Volley::Log.info ".. pushing:" if @debug
 
         localfiles.each do |localfile|
-          Volley::Log.info".. .. #{localfile}" if @debug
+          Volley::Log.info ".. .. #{localfile}" if @debug
           push_file(localfile, version, File.open(localfile))
         end
         push_file("latest", branch, version)
@@ -25,15 +42,15 @@ module Volley
 
       def pull(project, branch, ver="latest")
         @project = project
-        @branch = branch
+        @branch  = branch
         @version = ver
 
         if @version == "latest"
           @version = get_latest(@project, @branch)
         end
 
-        Volley::Log.info"remote: #{version}" if @debug
-        Volley::Log.info"remote_file: #{remote_file}" if @debug
+        Volley::Log.info "remote: #{version}" if @debug
+        Volley::Log.info "remote_file: #{remote_file}" if @debug
         pull_file(remote_file, version, "#@local/#{version}")
 
         "#@local/#{version}/#{remote_file}"

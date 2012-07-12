@@ -17,22 +17,56 @@ module Volley
         @block      = block
         @attributes = OpenStruct.new(options)
         @args       = OpenStruct.new
-        @actions    = []
+        @argdefs    = {}
+        @argdata    = {}
+        @actions    = {:pre => [], :main => [], :post => []}
+        instance_eval &block if block_given?
       end
 
-      def call(options)
-        @cliargs = options[:cliargs].inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h } if options[:cliargs]
-        instance_eval &@block
+      def call(options={})
+        @cliargs = options[:cliargs]
+        @argdata = @cliargs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h } if @cliargs
+        #instance_eval &@block
         run_actions
       end
 
-      def run_actions
+      def full_usage
+        out = []
+        @argdefs.each do |n, arg|
+          t = arg[:convert] || "string"
+          r = arg[:required]
+          #o = "#{n}:#{t}"
+          #o = "[#{o}]" unless r
+          d = arg[:default] ? "default: #{arg[:default]}" : ""
+          o = "%15s %15s %1s %s" % [n, t, (r ? '*' : ''), d]
+          out << "#{o}"
+        end
+        out
+      end
+
+      def usage
+        out = []
+        @argdefs.each do |n, arg|
+          t = arg[:convert] || "string"
+          r = arg[:required]
+          d = arg[:default] ? "#{arg[:default]}" : ""
+          v = arg[:choices] ? "[#{arg[:choices].join(",")}]" : "<#{n}>"
+          out << "#{n}:#{v}#{"*" if r}"
+        end
+        out.join(" ")
+      end
+
+      def run_actions(*stages)
+        stages = [*stages].flatten
+        stages = [:pre, :main, :post] if stages.count == 0
         ap Volley.config if Volley.config.debug
-        Volley::Log.info "running actions..."
-        @actions.each do |act|
-          Volley::Log.info "running action: #{act[:name]}"
-          ap act if Volley.config.debug
-          self.instance_eval(&act[:block])
+        stages.each do |stage|
+          Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
+          @actions[stage].each do |act|
+            Volley::Log.info "running action: #{act[:name]}"
+            ap act if Volley.config.debug
+            self.instance_eval(&act[:block])
+          end
         end
         ap self if Volley.config.debug
       end
@@ -51,32 +85,35 @@ module Volley
       end
 
       def argument(name, opts={ })
-        n = name.to_sym
-        # had to make this more complex to handle valid "false" values
-        v = begin
-          if @cliargs[n].nil?
-            if opts[:default].nil?
-              nil
+        @argdefs[name] = opts
+        action "argument-#{name}", :pre do
+          n = name.to_sym
+          # had to make this more complex to handle valid "false" values
+          v = begin
+            if @argdata[n].nil?
+              if opts[:default].nil?
+                nil
+              else
+                opts[:default]
+              end
             else
-              opts[:default]
+              @argdata[n]
             end
-          else
-            @cliargs[n]
           end
-        end
-        raise "arg '#{name}' is required, but not set" if opts[:required] && v.nil?
-        if opts[:convert]
-          if opts[:convert] == :boolean
-            v = boolean(v)
-          else
-            v = v.send(opts[:convert])
+          raise "arg '#{name}' is required, but not set" if opts[:required] && v.nil?
+          if opts[:convert]
+            if opts[:convert] == :boolean
+              v = boolean(v)
+            else
+              v = v.send(opts[:convert])
+            end
+          elsif block_given?
+            v = yield v
           end
-        elsif block_given?
-          v = yield v
+          raise "arg '#{name}' is required, but not set (after convert)" if opts[:required] && v.nil?
+          @args.send("#{n}=", v)
+          @attributes.send("#{n}=", v) if opts[:attr]
         end
-        raise "arg '#{name}' is required, but not set (after convert)" if opts[:required] && v.nil?
-        @args.send("#{n}=", v)
-        @attributes.send("#{n}=", v) if opts[:attr]
       end
 
       def output(tf=true)
@@ -84,13 +121,17 @@ module Volley
         argument :output, :attr => true, :default => tf, :convert => :boolean
       end
 
-      def action(name, &block)
+      def default(&block)
+        action(:default, :main, &block)
+      end
+
+      def action(name, stage=:main, &block)
         n = name.to_sym
-        @actions << { :name => n, :block => block }
+        @actions[stage] << { :name => n, :stage => stage, :block => block }
       end
 
       def push(&block)
-        action :build do
+        action :files do
           list     = begin
             case block.arity
               when 1
@@ -133,6 +174,7 @@ module Volley
               end
             end
 
+            origpath = Dir.pwd
             Dir.chdir(path)
             case @attributes.pack_type
               when "tgz"
@@ -145,6 +187,8 @@ module Volley
               else
                 raise "unknown pack type '#{@attributes.pack_type}'"
             end
+
+            Dir.chdir(origpath)
           end
         end
 
@@ -190,21 +234,48 @@ module Volley
       #  end
       #end
 
+      #def volley(opts={ })
+      #  o = {
+      #      :project => @project.name,
+      #      :branch  => args.branch,
+      #      :version => "latest",
+      #      :plan    => "pull",
+      #  }.merge(opts)
+      #
+      #  desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
+      #  actionname = "volley-#{desc}"
+      #  action actionname do
+      #    Volley::Log.info "VOLLEY: #{desc}"
+      #    cmd = ["volley"]
+      #    cmd << desc
+      #    shellout(cmd.join(" "), :output => true)
+      #  end
+      #end
+
       def volley(opts={ })
         o = {
             :project => @project.name,
-            :branch  => args.branch,
-            :version => "latest",
+            #:branch  => args.branch,
+            #:version => "latest",
             :plan    => "pull",
         }.merge(opts)
 
-        actionname = [o[:project], o[:branch], o[:version], o[:plan]].join("-")
-        action actionname do
-          #Volley::Log.info "VOLLEY: #{o[:project]} #{o[:branch]} #{o[:version]} #{o[:plan]}"
-          cmd = ["volley get"]
-          cmd << [o[:project], o[:branch], o[:version], o[:plan]].join(":")
-          shellout(cmd.join(" "))
+        pr = o[:project]
+        pl = o[:plan]
+
+        action "volley-#{pr}-#{pl}" do
+          plan = Volley::Dsl.project(pr).plan(pl)
+          plan.call(:cliargs => @cliargs)
         end
+
+        #desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
+        #actionname = "volley-#{desc}"
+        #action actionname do
+        #  Volley::Log.info "VOLLEY: #{desc}"
+        #  cmd = ["volley"]
+        #  cmd << desc
+        #  shellout(cmd.join(" "), :output => true)
+        #end
       end
 
       def command(*args)
@@ -216,10 +287,15 @@ module Volley
 
       def shellout(*args)
         require "mixlib/shellout"
+        opts = args.last.is_a?(Hash) ? args.pop : {}
+        options = {
+            :output => @attributes.output,
+            :prepend => ">> ",
+        }.merge(opts)
         command = ::Mixlib::ShellOut.new(*args)
         command.run_command
-        command.stdout.lines.each { |l| Volley::Log.info ".. out: #{l}" } if @attributes.output && command.stdout
-        command.stderr.lines.each { |l| Volley::Log.info ".. err: #{l}" } if @attributes.output && command.stderr
+        command.stdout.lines.each { |l| Volley::Log.info "#{options[:prepend]}#{l}" } if options[:output] && command.stdout
+        command.stderr.lines.each { |l| Volley::Log.info "#{options[:prepend]}#{l}" } if options[:output] && command.stderr
         command.error!
         { :out => command.stdout, :err => command.stderr }
       end

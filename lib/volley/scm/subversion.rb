@@ -37,6 +37,7 @@ module Volley
       end
 
       def update
+        @options.delete(:update)
         up = %x{svn update}
         @data = nil
       end

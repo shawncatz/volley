@@ -1,0 +1,61 @@
+project :volley do
+  plan :init do
+    default do
+      file = File.expand_path("../init/Volleyfile", __FILE__)
+      dest = "#{Dir.pwd}/Volleyfile"
+      FileUtils.copy(file, dest)
+      puts "created: #{dest}"
+    end
+  end
+  plan :list do
+    default do
+      Volley::Dsl::Project.projects.each do |p, project|
+        Volley::Log.info "project: #{p}"
+        project.plans.each do |pl, plan|
+          Volley::Log.info ".. #{pl} #{plan.usage}"
+        end
+      end
+    end
+  end
+  plan :latest do
+    argument :project, :required => true
+    argument :branch, :required => true
+    default do
+      pub = Volley::Dsl.publisher
+      puts pub.latest(args.project, args.branch)
+    end
+  end
+  plan :remote do
+    argument :project
+    argument :branch
+    argument :version
+    argument :output, :default => "list", :convert => :to_sym, :choices => ["json","xml","list"]
+
+    default do
+      pub  = Volley::Dsl.publisher
+      data = []
+      if args.project
+        if args.branch
+          if args.version
+            data = pub.contents(args.project, args.branch, args.version)
+          else
+            data = pub.versions(args.project, args.branch)
+          end
+        else
+          data = pub.branches(args.project)
+        end
+      else
+        data = pub.projects
+      end
+
+      case args.output
+        when :json
+          puts data.to_json
+        when :xml
+          puts data.to_xml
+        else
+          data.each { |e| puts e }
+      end
+    end
+  end
+end

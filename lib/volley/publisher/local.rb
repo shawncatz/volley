@@ -2,6 +2,19 @@ module Volley
   module Publisher
     class Local < Base
 
+      def projects
+        puts "#@directory"
+        Dir["#@directory/*"].map {|e| e.gsub(/#@directory\//,"")}
+      end
+
+      def branches(pr)
+        Dir["#@directory/#{pr}/*"].map {|e| e.gsub(/#@directory\/#{pr}\//,"")}
+      end
+
+      def versions(pr, br)
+        Dir["#@directory/#{pr}/#{br}/*"].map {|e| e.gsub(/#@directory\/#{pr}\/#{br}\//,"")}
+      end
+
       private
 
       def load_configuration
@@ -15,7 +28,7 @@ module Volley
       end
 
       def push_file(local, path, content = nil)
-        Volley::Log.info"content=#{content.inspect}"
+        Volley::Log.debug "content=#{content.inspect}"
         local = File.basename(local) if local =~ /^\//
         dest = "#@directory/#{path}"
         file = "#{dest}/#{local}"

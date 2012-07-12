@@ -2,18 +2,21 @@ module Volley
   module VolleyFile
     class << self
       def init
-        load("~/.Volleyfile", :optional => true)
+        @loaded = {}
+        ["~/.Volleyfile", "~/.volleyfile", "/etc/Volleyfile", "../../../conf/common.volleyfile"].each do |f|
+          file = File.expand_path(f, __FILE__)
+          @loaded[file] ||= load(file, :optional => true)
+        end
       end
 
       def load(filename, options={ })
-        #Volley::Log.info"LOAD: #{filename} #{options.inspect}"
+        Volley::Log.debug "LOAD: #{filename} #{options.inspect}"
         @projects ||= { }
         file      = File.expand_path(filename)
-        config.volleyfile = "#{Dir.pwd}/Volleyfile" if options[:primary]
+        config.volleyfile = file if options[:primary]
 
         if File.file?(file)
-          instance_eval(File.read(file), "Volleyfile")
-          #Volley::Dsl::Project.class_eval(File.read(file), "#{Dir.pwd}/Volleyfile")
+          @loaded[file] ||= instance_eval(File.read(file), "Volleyfile")
         else
           raise "cannot read file" unless options[:optional]
         end
@@ -26,6 +29,7 @@ module Volley
       # TOP LEVEL DSL METHODS
 
       def project(name, o={}, &block)
+        Volley::Log.debug "project: #{name}"
         Volley::Dsl::Project.project(name, o, &block)
       end
 
