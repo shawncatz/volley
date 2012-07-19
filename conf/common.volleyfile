@@ -25,37 +25,55 @@ project :volley do
       puts pub.latest(args.project, args.branch)
     end
   end
-  plan :remote do
+  plan :versions do
     argument :project
     argument :branch
     argument :version
-    argument :output, :default => "list", :convert => :to_sym, :choices => ["json","xml","list"]
+    argument :all, :convert => :boolean, :default => false
+    argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
 
     default do
       pub  = Volley::Dsl.publisher
       data = []
-      if args.project
-        if args.branch
-          if args.version
-            data = pub.contents(args.project, args.branch, args.version)
+      if args.all
+        data = pub.files["all"].keys.reject {|e| e =~ /latest$/}
+        data.each { |k, v| puts "%2s %s" % [v, k] }
+      else
+        if args.project
+          if args.branch
+            if args.version
+              data = pub.contents(args.project, args.branch, args.version)
+            else
+              data = pub.versions(args.project, args.branch)
+            end
           else
-            data = pub.versions(args.project, args.branch)
+            data = pub.branches(args.project)
           end
         else
-          data = pub.branches(args.project)
+          data = pub.projects
         end
-      else
-        data = pub.projects
-      end
 
-      case args.output
-        when :json
-          puts data.to_json
-        when :xml
-          puts data.to_xml
-        else
-          data.each { |e| puts e }
+        case args.output
+          when :json
+            puts data.to_json
+          when :xml
+            puts data.to_xml
+          else
+            data.each { |e| puts e }
+        end
       end
+    end
+  end
+  plan :remote do
+    argument :version, :required => true
+
+    default do
+      pub = Volley::Dsl.publisher
+      (pr, br, vr) = args.version.split(/[\:\/\.]/)
+      vr ||= 'latest'
+      vf = pub.volleyfile(:project => pr, :branch => br, :version => vr)
+      load vf
+      volley :project => "volley", :plan => "list"
     end
   end
 end

@@ -63,7 +63,7 @@ module Volley
         stages.each do |stage|
           Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
           @actions[stage].each do |act|
-            Volley::Log.info "running action: #{act[:name]}"
+            Volley::Log.debug "running action: #{act[:name]}"
             ap act if Volley.config.debug
             self.instance_eval(&act[:block])
           end
@@ -82,6 +82,14 @@ module Volley
 
       def source
         @project.source or raise "SCM not configured"
+      end
+
+      def load(file)
+        real = File.expand_path(file)
+        Volley::VolleyFile.load(real)
+      rescue => e
+        Volley::Log.error "failed to load file: #{e.message}: #{file} (#{real})"
+        Volley::Log.debug e
       end
 
       def argument(name, opts={ })
@@ -131,7 +139,7 @@ module Volley
       end
 
       def push(&block)
-        action :files do
+        action :files, :post do
           list     = begin
             case block.arity
               when 1
@@ -141,14 +149,14 @@ module Volley
             end
           end
           list     = [*list].flatten
-          notfound = list.reject { |f| File.file?(f) }
+          notfound = list.reject { |f| File.exists?(f) }
           raise "built files not found: #{notfound.join(",")}" unless notfound.count == 0
           @attributes.artifact_list = list
           @attributes.artifact_list << Volley.config.volleyfile
         end
 
         if @attributes.pack
-          action :pack do
+          action :pack, :post do
             path = @attributes.pack_dir = "/var/tmp/volley-#{Time.now.to_i}-#{$$}"
             Dir.mkdir(path)
             dir = Dir.pwd
@@ -168,9 +176,13 @@ module Volley
               begin
                 Volley::Log.debug "pack file: #{source} => #{dest}"
                 FileUtils.mkdir_p(File.dirname(dest))
-                FileUtils.copy(source, dest)
+                if File.directory?(source)
+                  FileUtils.cp_r(source, dest)
+                else
+                  FileUtils.copy(source, dest)
+                end
               rescue => e
-                raise "could not copy file #{file}: #{e.message}"
+                raise "could not copy file #{source}: #{e.message}"
               end
             end
 
@@ -193,7 +205,7 @@ module Volley
         end
 
         if @attributes.encrypt
-          action :encrypt do
+          action :encrypt, :post do
             art = @attributes.artifact
             key = @attributes.encrypt_key
             cpt = "#{art}.cpt"
@@ -207,7 +219,7 @@ module Volley
           end
         end
 
-        action :push do
+        action :push, :post do
           publisher = Volley::Dsl.publisher
           publisher.push(@project.name, args.branch, args.version, @attributes.artifact)
         end

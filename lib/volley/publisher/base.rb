@@ -15,7 +15,7 @@ module Volley
       def volleyfile(desc={ })
         @project = desc[:project]
         @branch  = desc[:branch]
-        @version = desc[:version]||get_latest(@project, @branch)
+        @version = desc[:version] && desc[:version] != 'latest' ? desc[:version] : get_latest(@project, @branch)
         contents = pull_file("Volleyfile", version)
         dest     = @options[:destination] || "/tmp/Volleyfile-#{Time.now.to_i}-#{$$}"
         raise "File #{dest} already exists" if File.exists?(dest)

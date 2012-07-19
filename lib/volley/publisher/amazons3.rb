@@ -13,7 +13,13 @@ module Volley
           hash[pr][br] ||= {}
           hash[pr][br][vr] ||= []
           hash[pr][br][vr] << e
+          hash["all"] ||= {}
+          hash["latest"] ||= {}
+          v = "#{pr}/#{br}/#{vr}"
+          hash["latest"]["#{pr}/#{br}"] ||= latest(pr, br)
+          hash["all"][v] = hash["latest"] == v
         end
+        ap hash
         hash
       end
 
