@@ -242,18 +242,17 @@ module Volley
 
           dir = File.dirname(file)
           Volley::Log.info "changing directory: #{dir} (#{file})"
-
-          #cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
-          #Volley::Log.info "command: #{cmd}"
         end
+
         action :unpack do
           FileUtils.mkdir_p("#{dir}/unpack")
           Dir.chdir("#{dir}/unpack")
           tgz = %x{tar xvfz #{file} 2>/dev/null}
           File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
         end
+
         action :run do
-          yield dir if dir
+          yield "#{dir}/unpack" if dir && File.directory?("#{dir}/unpack")
         end
       end
 
