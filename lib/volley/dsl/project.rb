@@ -23,6 +23,11 @@ module Volley
         def config
           Volley.config
         end
+
+        def exists?(name)
+          n = name.to_sym
+          @projects.keys.include?(n)
+        end
       end
 
       attr_reader :plans
@@ -47,6 +52,11 @@ module Volley
           @plans[n] ||= Volley::Dsl::Plan.new(name, options, &block)
         end
         @plans[n]
+      end
+
+      def plan?(name)
+        n = name.to_sym
+        @plans.keys.include?(n)
       end
 
       def scm(name, o={}, &block)

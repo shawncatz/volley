@@ -15,6 +15,10 @@ module Volley
         Volley::Dsl::Project.get(name)
       end
 
+      def project?(name)
+        Volley::Dsl::Project.exists?(name)
+      end
+
       def projects
         Volley::Dsl::Project.projects
       end

@@ -6,49 +6,55 @@ module Volley
       attr_accessor :key, :secret
 
       def files
-        hash = {}
+        hash = {:desc => {}, :all => {}, :latest => {}}
         @connection.directories.get(@bucket).files.collect{|e| e.key}.each do |e|
           (pr, br, vr) = e.split(/\//)
-          hash[pr] ||= {}
-          hash[pr][br] ||= {}
-          hash[pr][br][vr] ||= []
-          hash[pr][br][vr] << e
-          hash["all"] ||= {}
-          hash["latest"] ||= {}
+          hash[:desc][pr] ||= {}
+          hash[:desc][pr][br] ||= {}
+          hash[:desc][pr][br][vr] ||= []
+          hash[:desc][pr][br][vr] << e
+          hash[:all] ||= {}
+          hash[:latest] ||= {}
           v = "#{pr}/#{br}/#{vr}"
-          hash["latest"]["#{pr}/#{br}"] ||= latest(pr, br)
-          hash["all"][v] = hash["latest"] == v
+          hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
+          hash[:all][v] = hash["latest"] == v
         end
-        ap hash
+        #ap hash
         hash
       end
 
+      def all
+        files[:all]
+      end
+
       def projects
-        files.keys
+        data = files
+        data[:desc].keys
         #files.collect{|e| e.split(/\//).first }.uniq
       rescue => e
-        Volley::Log.warn "error getting project list from publisher"
+        Volley::Log.warn "error getting project list from publisher: #{e.message} at #{e.backtrace.first}"
         []
       end
 
       def branches(pr)
-        files[pr].keys
+        puts "branches for #{pr}"
+        files[:desc][pr].keys
         #files.select{|e| e.split(/\//).first == pr}.collect{|e| e.split(/\//)[1]}
       rescue => e
-        Volley::Log.warn "error getting branch list from publisher"
+        Volley::Log.warn "error getting branch list from publisher: #{e.message}"
         []
       end
 
       def versions(pr,br)
-        files[pr][br].keys
+        files[:desc][pr][br].keys
         #raise "not implemented"
       rescue => e
-        Volley::Log.warn "error getting version list from publisher"
+        Volley::Log.warn "error getting version list from publisher: #{e.message}"
         []
       end
 
       def contents(pr, br, vr)
-        files[pr][br][vr]
+        files[:desc][pr][br][vr]
       end
 
       def latest(pr, br)

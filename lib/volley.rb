@@ -9,3 +9,50 @@ require "volley/volley_file"
 require "volley/publisher/base"
 
 require "volley/dsl"
+
+module Volley
+  class << self
+    def process(opts)
+      project = opts[:project]
+      plan    = opts[:plan]
+      branch  = opts[:branch]
+      version = opts[:version]
+      args    = opts[:args]
+
+      begin
+        if Volley::Dsl.project?(project)
+          # we have the project locally
+          pr = Volley::Dsl.project(project)
+          if pr.plan?(plan)
+            # plan is defined
+            pl = pr.plan(plan)
+            pl.call(:rawargs => args)
+          else
+            # plan is not defined
+            raise "could not find plan #{plan} in project #{project}"
+          end
+        else
+          # we dont have the project locally, search the publisher
+          pub = Volley::Dsl.publisher
+          if pub
+            if pub.projects.include?(project)
+              vf = pub.volleyfile(opts)
+              puts "VF:#{vf}"
+            else
+              raise "project #{project} does not exist in configured publisher #{pub.class}"
+            end
+          else
+            raise "project #{project} does not exist locally, and no publisher is configured."
+          end
+        end
+      rescue => e
+        Volley::Log.error "error while processing: #{e.message}"
+        Volley::Log.debug e
+      end
+
+      #if Volley.config.debug
+      #  ap Volley::Dsl::Project.projects
+      #end
+    end
+  end
+end

@@ -3,6 +3,8 @@ require 'tempfile'
 module Volley
   module Dsl
     class Plan
+      attr_accessor :rawargs
+
       def initialize(name, o={ }, &block)
         options = {
             :name      => name,
@@ -24,8 +26,7 @@ module Volley
       end
 
       def call(options={})
-        @cliargs = options[:cliargs]
-        @argdata = @cliargs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h } if @cliargs
+        process_arguments(options[:rawargs])
         #instance_eval &@block
         run_actions
       end
@@ -59,16 +60,16 @@ module Volley
       def run_actions(*stages)
         stages = [*stages].flatten
         stages = [:pre, :main, :post] if stages.count == 0
-        ap Volley.config if Volley.config.debug
+        #ap Volley.config if Volley.config.debug
         stages.each do |stage|
           Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
           @actions[stage].each do |act|
             Volley::Log.debug "running action: #{act[:name]}"
-            ap act if Volley.config.debug
+            #ap act if Volley.config.debug
             self.instance_eval(&act[:block])
           end
         end
-        ap self if Volley.config.debug
+        #ap self if Volley.config.debug
       end
 
       def method_missing(n, *args)
@@ -277,7 +278,7 @@ module Volley
 
         action "volley-#{pr}-#{pl}" do
           plan = Volley::Dsl.project(pr).plan(pl)
-          plan.call(:cliargs => @cliargs)
+          plan.call(:rawargs => @rawargs)
         end
 
         #desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
@@ -323,6 +324,15 @@ module Volley
             return false if value =~ /^(0|f|false|n|no)$/
         end
         nil
+      end
+
+      def process_arguments(raw)
+        if raw
+          kvs = raw.select{|e| e =~ /\:/}
+          raw = raw.reject{|e| e =~ /\:/}
+          @rawargs = raw
+          @argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
+        end
       end
     end
   end

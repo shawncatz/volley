@@ -18,11 +18,24 @@ project :volley do
     end
   end
   plan :latest do
-    argument :project, :required => true
-    argument :branch, :required => true
+    argument :project #, :required => true
+    argument :branch #, :required => true
     default do
+      project = args.project
+      branch  = args.branch
+
+      if project.nil? && rawargs
+        first = rawargs.first
+        (p, b) = first.split(/\//) if first
+        if p
+          project = p
+          branch  = b
+        end
+      end
+      raise "project and branch must be specified" unless project && branch
+
       pub = Volley::Dsl.publisher
-      puts pub.latest(args.project, args.branch)
+      puts pub.latest(project, branch)
     end
   end
   plan :versions do
@@ -33,21 +46,35 @@ project :volley do
     argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
 
     default do
+      project = args.project
+      branch  = args.branch
+      version = args.version
+
+      if project.nil? && rawargs
+        first = rawargs.first
+        (p, b, v) = first.split(/\//) if first
+        if p
+          project = p
+          branch  = b
+          version = v
+        end
+      end
+
       pub  = Volley::Dsl.publisher
       data = []
       if args.all
-        data = pub.files["all"].keys.reject {|e| e =~ /latest$/}
+        data = pub.all.keys.reject {|e| e =~ /latest$/}
         data.each { |k, v| puts "%2s %s" % [v, k] }
       else
-        if args.project
-          if args.branch
-            if args.version
-              data = pub.contents(args.project, args.branch, args.version)
+        if project
+          if branch
+            if version
+              data = pub.contents(project, branch, version)
             else
-              data = pub.versions(args.project, args.branch)
+              data = pub.versions(project, branch)
             end
           else
-            data = pub.branches(args.project)
+            data = pub.branches(project)
           end
         else
           data = pub.projects
