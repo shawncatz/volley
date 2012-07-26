@@ -23,9 +23,13 @@ module Volley
         @argdata    = {}
         @actions    = {:pre => [], :main => [], :post => []}
         instance_eval &block if block_given?
+
+        argument :branch, :required => true
+        argument :version, :default => "latest"
       end
 
       def call(options={})
+        @origargs = options[:rawargs]
         process_arguments(options[:rawargs])
         #instance_eval &@block
         run_actions
@@ -64,7 +68,12 @@ module Volley
           Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
           @actions[stage].each do |act|
             Volley::Log.debug "running action: #{act[:name]}"
-            self.instance_eval(&act[:block])
+            begin
+              self.instance_eval(&act[:block])
+            rescue => e
+              Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
+              Volley::Log.debug e
+            end
           end
         end
       end
@@ -224,8 +233,6 @@ module Volley
       end
 
       def pull
-        argument :branch, :required => true
-        argument :version, :default => "latest"
 
         dir = nil
         pub = nil
@@ -277,27 +284,12 @@ module Volley
       def volley(opts={ })
         o = {
             :project => @project.name,
-            #:branch  => args.branch,
-            #:version => "latest",
             :plan    => "pull",
         }.merge(opts)
 
-        pr = o[:project]
-        pl = o[:plan]
-
-        action "volley-#{pr}-#{pl}" do
-          plan = Volley::Dsl.project(pr).plan(pl)
-          plan.call(:rawargs => @rawargs)
+        action "volley-#{o[:project]}-#{o[:plan]}" do
+          Volley.process(o.merge(:branch => args.branch, :version => args.version, :args => @origargs))
         end
-
-        #desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
-        #actionname = "volley-#{desc}"
-        #action actionname do
-        #  Volley::Log.info "VOLLEY: #{desc}"
-        #  cmd = ["volley"]
-        #  cmd << desc
-        #  shellout(cmd.join(" "), :output => true)
-        #end
       end
 
       def command(*args)
@@ -336,9 +328,12 @@ module Volley
       end
 
       def process_arguments(raw)
+        Volley::Log.debug "process arguments: #{raw.inspect}"
         if raw
           kvs = raw.select{|e| e =~ /\:/}
           raw = raw.reject{|e| e =~ /\:/}
+          Volley::Log.debug "KVS: #{kvs.inspect}"
+          Volley::Log.debug "RAW: #{raw.inspect}"
           @rawargs = raw
           @argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
         end

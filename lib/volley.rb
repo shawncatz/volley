@@ -28,7 +28,9 @@ module Volley
           if pr.plan?(plan)
             # plan is defined
             pl = pr.plan(plan)
-            pl.call(:rawargs => [args,"branch:#{branch}","version:#{version}"].flatten)
+            args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
+            args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
+            pl.call(:rawargs => args)
           else
             # plan is not defined
             raise "could not find plan #{plan} in project #{project}"
