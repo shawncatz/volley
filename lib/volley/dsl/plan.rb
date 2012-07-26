@@ -23,9 +23,13 @@ module Volley
         @argdata    = {}
         @actions    = {:pre => [], :main => [], :post => []}
         instance_eval &block if block_given?
+
+        argument :branch, :required => true
+        argument :version, :default => "latest"
       end
 
       def call(options={})
+        @origargs = options[:rawargs]
         process_arguments(options[:rawargs])
         #instance_eval &@block
         run_actions
@@ -60,16 +64,18 @@ module Volley
       def run_actions(*stages)
         stages = [*stages].flatten
         stages = [:pre, :main, :post] if stages.count == 0
-        #ap Volley.config if Volley.config.debug
         stages.each do |stage|
           Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
           @actions[stage].each do |act|
             Volley::Log.debug "running action: #{act[:name]}"
-            #ap act if Volley.config.debug
-            self.instance_eval(&act[:block])
+            begin
+              self.instance_eval(&act[:block])
+            rescue => e
+              Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
+              Volley::Log.debug e
+            end
           end
         end
-        #ap self if Volley.config.debug
       end
 
       def method_missing(n, *args)
@@ -227,6 +233,12 @@ module Volley
       end
 
       def pull
+
+        dir = nil
+        pub = nil
+        file = nil
+        tgz = nil
+
         action :download do
           pr = @project.name
           br = args.branch
@@ -237,13 +249,17 @@ module Volley
 
           dir = File.dirname(file)
           Volley::Log.info "changing directory: #{dir} (#{file})"
-          cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
+        end
 
-          Volley::Log.info "command: #{cmd}"
+        action :unpack do
           FileUtils.mkdir_p("#{dir}/unpack")
           Dir.chdir("#{dir}/unpack")
           tgz = %x{tar xvfz #{file} 2>/dev/null}
           File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
+        end
+
+        action :run do
+          yield "#{dir}/unpack" if dir && File.directory?("#{dir}/unpack")
         end
       end
 
@@ -268,27 +284,12 @@ module Volley
       def volley(opts={ })
         o = {
             :project => @project.name,
-            #:branch  => args.branch,
-            #:version => "latest",
             :plan    => "pull",
         }.merge(opts)
 
-        pr = o[:project]
-        pl = o[:plan]
-
-        action "volley-#{pr}-#{pl}" do
-          plan = Volley::Dsl.project(pr).plan(pl)
-          plan.call(:rawargs => @rawargs)
+        action "volley-#{o[:project]}-#{o[:plan]}" do
+          Volley.process(o.merge(:branch => args.branch, :version => args.version, :args => @origargs))
         end
-
-        #desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
-        #actionname = "volley-#{desc}"
-        #action actionname do
-        #  Volley::Log.info "VOLLEY: #{desc}"
-        #  cmd = ["volley"]
-        #  cmd << desc
-        #  shellout(cmd.join(" "), :output => true)
-        #end
       end
 
       def command(*args)
@@ -327,9 +328,12 @@ module Volley
       end
 
       def process_arguments(raw)
+        Volley::Log.debug "process arguments: #{raw.inspect}"
         if raw
           kvs = raw.select{|e| e =~ /\:/}
           raw = raw.reject{|e| e =~ /\:/}
+          Volley::Log.debug "KVS: #{kvs.inspect}"
+          Volley::Log.debug "RAW: #{raw.inspect}"
           @rawargs = raw
           @argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
         end
