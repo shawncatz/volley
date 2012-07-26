@@ -60,16 +60,13 @@ module Volley
       def run_actions(*stages)
         stages = [*stages].flatten
         stages = [:pre, :main, :post] if stages.count == 0
-        #ap Volley.config if Volley.config.debug
         stages.each do |stage|
           Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
           @actions[stage].each do |act|
             Volley::Log.debug "running action: #{act[:name]}"
-            #ap act if Volley.config.debug
             self.instance_eval(&act[:block])
           end
         end
-        #ap self if Volley.config.debug
       end
 
       def method_missing(n, *args)
@@ -227,6 +224,14 @@ module Volley
       end
 
       def pull
+        argument :branch, :required => true
+        argument :version, :default => "latest"
+
+        dir = nil
+        pub = nil
+        file = nil
+        tgz = nil
+
         action :download do
           pr = @project.name
           br = args.branch
@@ -237,13 +242,18 @@ module Volley
 
           dir = File.dirname(file)
           Volley::Log.info "changing directory: #{dir} (#{file})"
-          cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
 
-          Volley::Log.info "command: #{cmd}"
+          #cmd = "volley run #{pr}:#{plan} branch:#{branch} #{arg_list.join(' ')}"
+          #Volley::Log.info "command: #{cmd}"
+        end
+        action :unpack do
           FileUtils.mkdir_p("#{dir}/unpack")
           Dir.chdir("#{dir}/unpack")
           tgz = %x{tar xvfz #{file} 2>/dev/null}
           File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
+        end
+        action :run do
+          yield dir if dir
         end
       end
 
