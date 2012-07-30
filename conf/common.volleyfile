@@ -1,7 +1,8 @@
 project :volley do
+  scm :base
   plan :init do
     default do
-      file = File.expand_path("../init/Volleyfile", __FILE__)
+      file = File.expand_path("../../init/Volleyfile", __FILE__)
       dest = "#{Dir.pwd}/Volleyfile"
       FileUtils.copy(file, dest)
       puts "created: #{dest}"
@@ -18,8 +19,6 @@ project :volley do
     end
   end
   plan :latest do
-    argument :project #, :required => true
-    argument :branch #, :required => true
     default do
       project = args.project
       branch  = args.branch

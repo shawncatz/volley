@@ -24,8 +24,12 @@ module Volley
         @actions    = {:pre => [], :main => [], :post => []}
         instance_eval &block if block_given?
 
-        argument :branch, :required => true
-        argument :version, :default => "latest"
+        argument :branch, :default => nil do |v|
+          v || source.branch || nil
+        end
+        argument :version, :default => "latest" do |v|
+          !v || v == "latest" ? source.revision : v
+        end
       end
 
       def call(options={})
@@ -263,24 +267,6 @@ module Volley
         end
       end
 
-      #def volley(opts={ })
-      #  o = {
-      #      :project => @project.name,
-      #      :branch  => args.branch,
-      #      :version => "latest",
-      #      :plan    => "pull",
-      #  }.merge(opts)
-      #
-      #  desc = [o[:project], o[:branch], o[:version], o[:plan]].compact.join(":")
-      #  actionname = "volley-#{desc}"
-      #  action actionname do
-      #    Volley::Log.info "VOLLEY: #{desc}"
-      #    cmd = ["volley"]
-      #    cmd << desc
-      #    shellout(cmd.join(" "), :output => true)
-      #  end
-      #end
-
       def volley(opts={ })
         o = {
             :project => @project.name,
@@ -288,7 +274,9 @@ module Volley
         }.merge(opts)
 
         action "volley-#{o[:project]}-#{o[:plan]}" do
-          Volley.process(o.merge(:branch => args.branch, :version => args.version, :args => @origargs))
+          options = {:branch => args.branch||source.branch, :version => args.version||source.revision, :args => @origargs}.merge(o)
+          puts options.inspect
+          Volley.process(options)
         end
       end
 
