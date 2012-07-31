@@ -3,7 +3,7 @@ module Volley
     class << self
       def init
         @loaded = {}
-        ["~/.Volleyfile", "/etc/Volleyfile", "../../../conf/common.volleyfile"].each do |f|
+        ["/etc/Volleyfile", "~/.Volleyfile", "../../../conf/common.volleyfile"].each do |f|
           file = File.expand_path(f, __FILE__)
           @loaded[file] ||= load(file, :optional => true)
         end
@@ -22,11 +22,11 @@ module Volley
         end
       end
 
+      # TOP LEVEL DSL METHODS
+
       def config
         Volley.config
       end
-
-      # TOP LEVEL DSL METHODS
 
       def project(name, o={}, &block)
         Volley::Log.debug "project: #{name}"
@@ -39,6 +39,10 @@ module Volley
 
       def log(level, dest)
         Volley::Log.add(level, dest)
+      end
+
+      def directory(dir)
+        Volley.config.directory = dir
       end
     end
   end

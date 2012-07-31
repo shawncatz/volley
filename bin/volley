@@ -1,55 +1,135 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
+require 'docopt'
 require 'volley'
-require 'clamp'
-
-Volley::VolleyFile.init
-STDOUT.sync = true
+require 'awesome_print'
 
 module Volley
-  class Command < Clamp::Command
-    option %w{-c --config}, "CONFIG", "configuration file", :default => "~/.Volleyfile"
-    option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "./Volleyfile"
-    option %w{-d --debug}, :flag, "set debug flag"
-    option %w{-f --fork}, :flag, "fork process into background"
+  class Command
+    def initialize
+      @doc = <<-DOC
+Usage: volley [options] <descriptor> <argument>...
 
-    parameter "DESCRIPTOR", "volley descriptor, follows the format: project:plan[@branch[:version]]"
-    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
+<descriptor>
+  A descriptor should conform to the following format:
+    <project>[:<plan>][@<branch>[:<version>]]
 
-    def execute
+  project:  the project name.
+  plan:     the plan name.
+            Default plan for local mode is "publish"
+            Default plan for remote mode is "deploy"
+  branch:   the branch name.
+            Defaults to the branch currently in use,
+            must be specified for remote mode.
+  version:  the version (revision)
+            Defaults to the current revision
+            In remote mode, defaults to "latest"
+
+<argument>
+  A list of key:value pairs
+
+Options:
+  -h --help           show this help message and exit
+     --version        show version and exit
+  -d --debug          show debug output, change log level to debug
+  -c --config FILE    load additional Volleyfile [default: ~/.Volleyfile]
+  -p --primary FILE   load primary Volleyfile [default: ./Volleyfile]
+
+  -r --remote         remote mode: fetch Volleyfile from publisher and run plan
+
+  -f --fork           fork process into background and exit
+      DOC
+    end
+
+    def run(argv)
+      STDOUT.sync = true
+      options = Docopt(@doc, Volley::Version::STRING)
+      remote = options[:r]
+      debug  = options[:d]
+      config = options[:c]
+      primary = options[:p]
+
+      Volley::VolleyFile.init
       Volley::VolleyFile.load(config, :optional => true)
       Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
-      Volley.config.debug = debug?
+      Volley.config.debug = debug
 
-      (project, plan, branch, version) = descriptor.split(/[:\@]/)
-      project = "volley" if project.nil? || project.blank?
+      descriptor = argv.shift
+      (pp, bv) = descriptor.split("@")
+      (project, plan) = (pp||"").split(":")
+      (branch, version) = (bv||"").split(":")
 
-      args = arg_list
-      args << "branch:#{branch}" if branch
-      args << "version:#{version}" if version
-
-      if debug?
-        puts "project:   #{project}"
-        puts "plan:      #{plan}"
-        puts "branch:    #{branch}"
-        puts "version:   #{version}"
-        puts "args_list: #{args.join(",")}"
+      if remote
+        raise "must specify branch in remote mode" unless branch
+        plan ||= "deploy"
+        version ||= "latest"
+      else
+        plan ||= "publish"
       end
 
-      #raise "you must specify project (#{project}): [#{Volley::Dsl.projects.keys.join(',')}]" unless project && Volley::Dsl.project(project)
-      #raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
+      if debug
+        Volley::Log.debug "## OPTIONS ##"
+        Volley::Log.debug "project:   #{project}"
+        Volley::Log.debug "plan:      #{plan}"
+        Volley::Log.debug "branch:    #{branch}"
+        Volley::Log.debug "version:   #{version}"
+        Volley::Log.debug "args_list: #{argv.join(",")}"
+      end
 
-      Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args)
-    rescue Interrupt => e
-      Volley::Log.warn "Cancelled..."
-    rescue => e
-      Volley::Log.error "error: #{e.message}"
-      Volley::Log.error e if debug?
-      Volley::Log.debug e
-      raise Clamp::HelpWanted, self
+      Volley::Log.info "processing..."
+      Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => argv)
     end
   end
 end
 
-Volley::Command.run
+Volley::Command.new.run(ARGV)
+
+
+#
+#module Volley
+#  class Command < Clamp::Command
+#    option %w{-c --config}, "CONFIG", "configuration file", :default => "~/.Volleyfile"
+#    option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "./Volleyfile"
+#    option %w{-d --debug}, :flag, "set debug flag"
+#    option %w{-f --fork}, :flag, "fork process into background"
+#
+#    parameter "DESCRIPTOR", "volley descriptor, follows the format: project:plan[@branch[:version]]"
+#    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
+#
+#    def execute
+#      Volley::VolleyFile.load(config, :optional => true)
+#      Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
+#      Volley.config.debug = debug?
+#
+#      (project, plan, branch, version) = descriptor.split(/[:\@]/)
+#      project = "volley" if project.nil? || project.blank?
+#
+#      args = arg_list
+#      args << "branch:#{branch}" if branch
+#      args << "version:#{version}" if version
+#
+#      if debug?
+#        puts "project:   #{project}"
+#        puts "plan:      #{plan}"
+#        puts "branch:    #{branch}"
+#        puts "version:   #{version}"
+#        puts "args_list: #{args.join(",")}"
+#      end
+#
+#      #raise "you must specify project (#{project}): [#{Volley::Dsl.projects.keys.join(',')}]" unless project && Volley::Dsl.project(project)
+#      #raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
+#
+#      Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args)
+#    rescue Interrupt => e
+#      Volley::Log.warn "Cancelled..."
+#    rescue => e
+#      Volley::Log.error "error: #{e.message}"
+#      Volley::Log.error e if debug?
+#      Volley::Log.debug e
+#      raise Clamp::HelpWanted, self
+#    end
+#  end
+#end
+#
+#Volley::Command.run

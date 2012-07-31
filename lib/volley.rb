@@ -7,6 +7,7 @@ require "volley/config"
 require "volley/log"
 require "volley/volley_file"
 require "volley/publisher/base"
+require "volley/meta"
 
 require "volley/dsl"
 
@@ -30,7 +31,12 @@ module Volley
             pl = pr.plan(plan)
             args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
             args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
-            pl.call(:rawargs => args)
+            data = pl.call(:rawargs => args)
+
+            if plan == "deploy"
+              Volley.meta[project] = data
+            end
+            Volley.meta.save
           else
             # plan is not defined
             raise "could not find plan #{plan} in project #{project}"

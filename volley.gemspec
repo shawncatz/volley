@@ -20,4 +20,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency "activesupport"
   gem.add_dependency "mixlib-shellout"
   gem.add_dependency "yell"
+  gem.add_dependency "docopt"
 end

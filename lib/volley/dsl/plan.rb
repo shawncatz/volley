@@ -19,9 +19,9 @@ module Volley
         @block      = block
         @attributes = OpenStruct.new(options)
         @args       = OpenStruct.new
-        @argdefs    = {}
-        @argdata    = {}
-        @actions    = {:pre => [], :main => [], :post => []}
+        @argdefs    = { }
+        @argdata    = { }
+        @actions    = { :pre => [], :main => [], :post => [] }
         instance_eval &block if block_given?
 
         argument :branch, :default => nil do |v|
@@ -32,11 +32,12 @@ module Volley
         end
       end
 
-      def call(options={})
+      def call(options={ })
         @origargs = options[:rawargs]
         process_arguments(options[:rawargs])
         #instance_eval &@block
         run_actions
+        [args.branch, args.version].join(":")
       end
 
       def full_usage
@@ -69,14 +70,15 @@ module Volley
         stages = [*stages].flatten
         stages = [:pre, :main, :post] if stages.count == 0
         stages.each do |stage|
-          Volley::Log.debug "running actions[:#{stage}]:" if @actions[stage].count > 0
-          @actions[stage].each do |act|
-            Volley::Log.debug "running action: #{act[:name]}"
-            begin
-              self.instance_eval(&act[:block])
-            rescue => e
-              Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
-              Volley::Log.debug e
+          if @actions[stage].count > 0
+            @actions[stage].each do |act|
+              Volley::Log.info ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
+              begin
+                self.instance_eval(&act[:block])
+              rescue => e
+                Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
+                Volley::Log.debug e
+              end
             end
           end
         end
@@ -238,17 +240,17 @@ module Volley
 
       def pull
 
-        dir = nil
-        pub = nil
+        dir  = nil
+        pub  = nil
         file = nil
-        tgz = nil
+        tgz  = nil
 
         action :download do
           pr = @project.name
           br = args.branch
           ve = args.version
 
-          pub = Volley::Dsl.publisher
+          pub  = Volley::Dsl.publisher
           file = pub.pull(pr, br, ve)
 
           dir = File.dirname(file)
@@ -259,7 +261,7 @@ module Volley
           FileUtils.mkdir_p("#{dir}/unpack")
           Dir.chdir("#{dir}/unpack")
           tgz = %x{tar xvfz #{file} 2>/dev/null}
-          File.open("#{dir}/tgz.log", "w") {|f| f.write(tgz)}
+          File.open("#{dir}/tgz.log", "w") { |f| f.write(tgz) }
         end
 
         action :run do
@@ -274,8 +276,7 @@ module Volley
         }.merge(opts)
 
         action "volley-#{o[:project]}-#{o[:plan]}" do
-          options = {:branch => args.branch||source.branch, :version => args.version||source.revision, :args => @origargs}.merge(o)
-          puts options.inspect
+          options = { :branch => args.branch||source.branch, :version => args.version||source.revision, :args => @origargs }.merge(o)
           Volley.process(options)
         end
       end
@@ -289,9 +290,9 @@ module Volley
 
       def shellout(*args)
         require "mixlib/shellout"
-        opts = args.last.is_a?(Hash) ? args.pop : {}
+        opts    = args.last.is_a?(Hash) ? args.pop : { }
         options = {
-            :output => @attributes.output,
+            :output  => @attributes.output,
             :prepend => ">> ",
         }.merge(opts)
         command = ::Mixlib::ShellOut.new(*args)
@@ -318,8 +319,8 @@ module Volley
       def process_arguments(raw)
         Volley::Log.debug "process arguments: #{raw.inspect}"
         if raw
-          kvs = raw.select{|e| e =~ /\:/}
-          raw = raw.reject{|e| e =~ /\:/}
+          kvs = raw.select { |e| e =~ /\:/ }
+          raw = raw.reject { |e| e =~ /\:/ }
           Volley::Log.debug "KVS: #{kvs.inspect}"
           Volley::Log.debug "RAW: #{raw.inspect}"
           @rawargs = raw
