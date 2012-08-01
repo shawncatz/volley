@@ -1,0 +1,13 @@
+
+task :build do
+  pwd = Dir.pwd
+  project = "test"
+  %w{trunk staging}.each do |branch|
+    Dir.chdir(branch)
+    Dir["*"].each do |version|
+      cmd = "tar cfz #{pwd}/#{project}-#{branch}-#{version}.tgz *"
+      %x{#{cmd}}
+    end
+    Dir.chdir(pwd)
+  end
+end

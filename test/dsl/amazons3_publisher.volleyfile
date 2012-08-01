@@ -1,0 +1,6 @@
+
+publisher :amazons3,
+          :aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
+          :aws_secret_access_key => "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",
+          :bucket => "inqcloud-volley-test",
+          :local => "#{root}/test/publisher/local"
