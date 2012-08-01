@@ -10,7 +10,6 @@ module Volley
       end
 
       def load(filename, options={ })
-        Volley::Log.debug "LOAD: #{filename} #{options.inspect}"
         file = load_file(filename)
         raise "cannot read file #{file}" unless file || options[:optional]
         config.volleyfile = file if options[:primary]
@@ -46,7 +45,8 @@ module Volley
         @loaded   ||= { }
         @projects ||= { }
 
-        file = File.expand_path(filename)
+        file = File.expand_path(filename, __FILE__)
+        Volley::Log.debug "LOAD: [#{File.file?(file)}] #{filename}"
         return unless File.file?(file)
         @loaded[file] ||= instance_eval(File.read(file), file)
         file

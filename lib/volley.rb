@@ -8,6 +8,7 @@ require "volley/log"
 require "volley/volley_file"
 require "volley/publisher/base"
 require "volley/publisher/exceptions"
+require "volley/descriptor"
 require "volley/meta"
 
 require "volley/dsl"

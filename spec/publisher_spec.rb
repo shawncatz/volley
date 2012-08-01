@@ -1,5 +1,3 @@
-$:.unshift File.expand_path("lib/")
-require 'volley'
 require 'volley/publisher/local'
 require 'volley/publisher/amazons3'
 
@@ -70,13 +68,13 @@ describe Volley::Publisher::Local do
   end
 end
 
-describe Volley::Publisher::Amazons3 do
-  it_behaves_like Volley::Publisher::Base
-
-  before(:each) do
-    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
-                                           :aws_secret_access_key => "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",
-                                           :bucket => "inqcloud-volley-test",
-                                           :local => "#{root}/test/publisher/local")
-  end
-end
+#describe Volley::Publisher::Amazons3 do
+#  it_behaves_like Volley::Publisher::Base
+#
+#  before(:each) do
+#    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
+#                                           :aws_secret_access_key => "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",
+#                                           :bucket => "inqcloud-volley-test",
+#                                           :local => "#{root}/test/publisher/local")
+#  end
+#end

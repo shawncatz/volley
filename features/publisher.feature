@@ -1,4 +1,6 @@
 
+# Built these tests as a starting point
+# duplicates the tests in spec/publisher_spec
 Feature: Publisher
   In order to store artifacts
   I want to be able to manage files with a publisher

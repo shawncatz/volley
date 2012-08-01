@@ -9,16 +9,17 @@ module Volley
   class Command
     def initialize
       @doc = <<-DOC
-Usage: volley [options] <descriptor> <argument>...
+Usage: volley [options] <plan> <descriptor> <argument>...
+
+<plan>
+  The plan to run.
+  reserved plan names: [versions, latest, list]
 
 <descriptor>
   A descriptor should conform to the following format:
-    <project>[:<plan>][@<branch>[:<version>]]
+    <project>[@<branch>[:<version>]]
 
   project:  the project name.
-  plan:     the plan name.
-            Default plan for local mode is "publish"
-            Default plan for remote mode is "deploy"
   branch:   the branch name.
             Defaults to the branch currently in use,
             must be specified for remote mode.
@@ -55,17 +56,23 @@ Options:
       Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
       Volley.config.debug = debug
 
-      descriptor = argv.shift
-      (pp, bv) = descriptor.split("@")
-      (project, plan) = (pp||"").split(":")
-      (branch, version) = (bv||"").split(":")
+      plan = argv.shift
+      raise "error: must specify plan" unless plan
 
-      if remote
-        raise "must specify branch in remote mode" unless branch
-        plan ||= "deploy"
-        version ||= "latest"
+      project = nil
+      branch  = nil
+      version = nil
+
+      if Volley::Dsl.project(:volley).plan?(plan)
+        # the plan is reserved
+        project = "volley"
       else
-        plan ||= "publish"
+        # the plan isn't reserved
+        desc = Volley::Descriptor.new(argv.shift)
+        raise "error: must specify descriptor" unless desc
+        (project, branch, version) = desc.get
+        raise "project #{project} not found" unless Volley::Dsl.project?(project)
+        raise "project #{project} plan #{plan} not found" unless Volley::Dsl.project(desc.project).plan?(desc.plan)
       end
 
       if debug
@@ -77,7 +84,7 @@ Options:
         Volley::Log.debug "args_list: #{argv.join(",")}"
       end
 
-      Volley::Log.info "processing..."
+      #Volley::Log.info "processing..."
       Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => argv)
     end
   end

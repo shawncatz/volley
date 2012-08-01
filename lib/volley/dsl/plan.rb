@@ -73,11 +73,11 @@ module Volley
         stages.each do |stage|
           if @actions[stage].count > 0
             @actions[stage].each do |act|
-              Volley::Log.info ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
+              Volley::Log.debug ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
               begin
                 self.instance_eval(&act[:block])
               rescue => e
-                Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
+                Volley::Log.error "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
                 Volley::Log.debug e
                 raise e
               end
@@ -97,6 +97,10 @@ module Volley
 
       def source
         @project.source or raise "SCM not configured"
+      end
+
+      def log(msg)
+        Volley::Log.info msg
       end
 
       def load(file)

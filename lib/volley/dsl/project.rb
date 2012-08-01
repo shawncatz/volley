@@ -43,6 +43,10 @@ module Volley
         @config ||= OpenStruct.new
       end
 
+      def log(msg)
+        Volley::Log.info msg
+      end
+
       def plan(name, o={}, &block)
         n = name.to_sym
         options = {

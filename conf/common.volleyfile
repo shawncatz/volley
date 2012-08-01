@@ -20,8 +20,7 @@ project :volley do
   end
   plan :latest do
     default do
-      project = args.project
-      branch  = args.branch
+      (project,branch,version) = Volley::Descriptor.new(rawargs.first).get
 
       if project.nil? && rawargs
         first = rawargs.first
