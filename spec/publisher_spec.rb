@@ -9,6 +9,15 @@ Volley::Log.add(:debug, "#{root}/log/volley.log")
 Volley::Log.console_disable
 
 shared_examples_for Volley::Publisher::Base do
+  before(:all) do
+    FileUtils.mkdir_p("#{root}/test/publisher/remote")
+    FileUtils.mkdir_p("#{root}/test/publisher/local")
+  end
+
+  after(:all) do
+    FileUtils.rm_rf("#{root}/test/publisher")
+  end
+
   it "should be able to publish artifacts" do
     Dir.chdir("#{root}/test/")
     expect(@pub.push("spec", "trunk", "1", "./trunk-1.tgz")).to eq(true)
