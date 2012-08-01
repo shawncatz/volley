@@ -7,6 +7,7 @@ require "volley/config"
 require "volley/log"
 require "volley/volley_file"
 require "volley/publisher/base"
+require "volley/publisher/exceptions"
 require "volley/meta"
 
 require "volley/dsl"
@@ -18,7 +19,7 @@ module Volley
       plan    = opts[:plan]
       branch  = opts[:branch]
       version = opts[:version]
-      args    = opts[:args]
+      args    = opts[:args] || []
       second  = opts[:second]
 
       begin
@@ -61,10 +62,11 @@ module Volley
       rescue => e
         Volley::Log.error "error while processing: #{e.message}"
         Volley::Log.debug e
+        raise e
       end
 
       #if Volley.config.debug
-      #  ap Volley::Dsl::Project.projects
+      #  ap Volley::Dsl::Project.project
       #end
     end
   end

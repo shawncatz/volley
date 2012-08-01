@@ -37,7 +37,6 @@ module Volley
       end
 
       def branches(pr)
-        puts "branches for #{pr}"
         files[:desc][pr].keys
         #files.select{|e| e.split(/\//).first == pr}.collect{|e| e.split(/\//)[1]}
       rescue => e
@@ -53,15 +52,24 @@ module Volley
         []
       end
 
-      def contents(pr, br, vr)
-        files[:desc][pr][br][vr]
+      def exists?(project, branch, version)
+        !files[:desc][project][branch][version].nil? rescue false
       end
 
-      def latest(pr, br)
-        @project = pr
-        @branch = br
-        f = @connection.directories.get(@bucket).files.get("#{branch}/latest")
-        f.body
+      def delete_project(project)
+        Volley::Log.info "delete_project #{project}"
+        dir = @connection.directories.get(@bucket)
+        dir.files.select{|e| e.key =~ /^#{project}\//}.each do |f|
+          #k = e.key
+          #f = dir.files.get(k)
+          Volley::Log.info "- #{f.key}"
+          f.destroy
+        end
+        true
+      rescue => e
+        Volley::Log.error "error deleting project: #{e.message} at #{e.backtrace.first}"
+        Volley::Log.debug e
+        false
       end
 
       private

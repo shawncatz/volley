@@ -3,7 +3,6 @@ module Volley
     class Local < Base
 
       def projects
-        puts "#@directory"
         Dir["#@directory/*"].map {|e| e.gsub(/#@directory\//,"")}
       end
 
@@ -13,6 +12,19 @@ module Volley
 
       def versions(pr, br)
         Dir["#@directory/#{pr}/#{br}/*"].map {|e| e.gsub(/#@directory\/#{pr}\/#{br}\//,"")}
+      end
+
+      def exists?(project, branch, version)
+        d = "#@directory/#{project}/#{branch}/#{version}"
+        File.directory?(d)
+      end
+
+      def delete_project(project)
+        FileUtils.rm_rf("#@directory/#{project}")
+        true
+      rescue => e
+        Volley::Log.error "error deleting project: #{e.message} at #{e.backtrace.first}"
+        false
       end
 
       private

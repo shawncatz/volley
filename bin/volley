@@ -117,7 +117,7 @@ Volley::Command.new.run(ARGV)
 #        puts "args_list: #{args.join(",")}"
 #      end
 #
-#      #raise "you must specify project (#{project}): [#{Volley::Dsl.projects.keys.join(',')}]" unless project && Volley::Dsl.project(project)
+#      #raise "you must specify project (#{project}): [#{Volley::Dsl.project.keys.join(',')}]" unless project && Volley::Dsl.project(project)
 #      #raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
 #
 #      Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args)

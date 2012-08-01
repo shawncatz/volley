@@ -12,6 +12,18 @@ module Volley
         raise "not implemented"
       end
 
+      def branches(project)
+        raise "not implemented"
+      end
+
+      def versions(project, branch)
+        raise "not implemented"
+      end
+
+      def exists?(project, branch, version)
+        raise "not implemented"
+      end
+
       def volleyfile(desc={ })
         @project = desc[:project]
         @branch  = desc[:branch]
@@ -25,6 +37,8 @@ module Volley
       end
 
       def push(project, br, ver, localfiles)
+        raise ArtifactExists, "the artifact already exists" if exists?(project, br, ver)
+
         @project = project
         @branch  = br
         @version = ver
@@ -37,7 +51,9 @@ module Volley
           push_file(localfile, version, File.open(localfile))
         end
         push_file("latest", branch, version)
-        push_file("Volleyfile", version, File.open(Volley.config.volleyfile))
+        push_file("Volleyfile", version, File.open(Volley.config.volleyfile)) if Volley.config.volleyfile && File.file?(Volley.config.volleyfile)
+
+        true
       end
 
       def pull(project, branch, ver="latest")
@@ -56,10 +72,10 @@ module Volley
         "#@local/#{version}/#{remote_file}"
       end
 
-      def get_latest(project, branch)
-        cur       = pull_file("latest", "#{project}/#{branch}")
-        (p, n, v) = cur.split(/\//)
-        v
+      def latest(project, branch)
+        pull_file("latest", "#{project}/#{branch}")
+        #(p, n, v) = cur.split(/\//)
+        #v
       end
 
       private

@@ -5,5 +5,6 @@ gemspec
 
 gem 'rake'
 gem 'cucumber'
+gem 'rspec'
 
 gem 'awesome_print'

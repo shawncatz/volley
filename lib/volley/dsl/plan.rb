@@ -4,6 +4,7 @@ module Volley
   module Dsl
     class Plan
       attr_accessor :rawargs
+      attr_reader :project
 
       def initialize(name, o={ }, &block)
         options = {
@@ -78,6 +79,7 @@ module Volley
               rescue => e
                 Volley::Log.info "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
                 Volley::Log.debug e
+                raise e
               end
             end
           end
@@ -165,16 +167,18 @@ module Volley
           notfound = list.reject { |f| File.exists?(f) }
           raise "built files not found: #{notfound.join(",")}" unless notfound.count == 0
           @attributes.artifact_list = list
-          @attributes.artifact_list << Volley.config.volleyfile
+          @attributes.artifact_list << Volley.config.volleyfile if Volley.config.volleyfile
         end
 
         if @attributes.pack
           action :pack, :post do
-            path = @attributes.pack_dir = "/var/tmp/volley-#{Time.now.to_i}-#{$$}"
+            path = @attributes.pack_dir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
             Dir.mkdir(path)
             dir = Dir.pwd
 
             @attributes.artifact_list.each do |art|
+              Volley::Log.debug "art:#{art}"
+              next unless art
               if art =~ /^\// && art !~ /^#{dir}/
                 # file is full path and not in current directory
                 source = art
