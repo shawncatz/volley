@@ -73,8 +73,8 @@ describe Volley::Dsl::Plan do
     @plan.action :first do
       #nothing
     end
-    expect(@plan.actions.count).to eq(3)
-    expect(@plan.actions[:main].count).to eq(1)
+    expect(@plan.stages.count).to eq(3)
+    expect(@plan.stages[:main].count).to eq(1)
   end
 
   it "should be able to access source" do
@@ -88,8 +88,8 @@ describe Volley::Dsl::Plan do
 
   it "should handle arguments" do
     @plan.argument(:testarg)
-    expect(@plan.argdefs.count).to eq(3) # branch, version and testarg
-    version = @plan.call(:rawargs => ["testarg:true"])
+    expect(@plan.arguments.count).to eq(3) # branch, version and testarg
+    @plan.call(:rawargs => ["testarg:true"])
     expect(@plan.args.testarg).to eq("true")
   end
 

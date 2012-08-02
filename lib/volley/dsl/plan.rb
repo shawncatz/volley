@@ -6,7 +6,8 @@ module Volley
       attr_accessor :rawargs
       attr_reader :project
       attr_reader :actions
-      attr_reader :argdefs
+      attr_reader :stages
+      attr_reader :arguments
 
       def initialize(name, o={ }, &block)
         options = {
@@ -21,10 +22,15 @@ module Volley
         @project    = options[:project]
         @block      = block
         @attributes = OpenStruct.new(options)
-        @args       = OpenStruct.new
-        @argdefs    = { }
-        @argdata    = { }
-        @actions    = { :pre => [], :main => [], :post => [] }
+        #@args       = OpenStruct.new
+        #@actions    = { :pre => [], :main => [], :post => [] }
+        @arguments  = { }
+        @stages = {
+            :pre => Volley::Dsl::Stage.new(:pre, :plan => self),
+            :main => Volley::Dsl::Stage.new(:main, :plan => self),
+            :post => Volley::Dsl::Stage.new(:post, :plan => self),
+        }
+        @stage_order = [:pre, :main, :post]
         instance_eval &block if block_given?
 
         argument :branch, :default => nil do |v|
@@ -70,24 +76,27 @@ module Volley
       end
 
       def run_actions(*stages)
-        stages = [*stages].flatten
-        stages = [:pre, :main, :post] if stages.count == 0
-        stages.each do |stage|
-          if @actions[stage].count > 0
-            @actions[stage].each do |act|
-              Volley::Log.debug ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
-              begin
-                Volley::Log.debug ".. .. before"
-                self.instance_eval(&act[:block])
-                Volley::Log.debug ".. .. after"
-              rescue => e
-                Volley::Log.error "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
-                Volley::Log.debug e
-                raise e
-              end
-            end
-          end
+        @stage_order.each do |stage|
+          @stages[stage].call
         end
+        #stages = [*stages].flatten
+        #stages = [:pre, :main, :post] if stages.count == 0
+        #stages.each do |stage|
+        #  if @actions[stage].count > 0
+        #    @actions[stage].each do |act|
+        #      Volley::Log.debug ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
+        #      begin
+        #        Volley::Log.debug ".. .. before"
+        #        self.instance_eval(&act[:block])
+        #        Volley::Log.debug ".. .. after"
+        #      rescue => e
+        #        Volley::Log.error "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
+        #        Volley::Log.debug e
+        #        raise e
+        #      end
+        #    end
+        #  end
+        #end
       end
 
       def method_missing(n, *args)
@@ -96,7 +105,10 @@ module Volley
       end
 
       def args
-        @args
+        @args ||= begin
+          hash = @arguments.inject({}) {|h, e| (k,v)=e; h[k] = v.value; h}
+          OpenStruct.new(hash)
+        end
       end
 
       def source
@@ -114,36 +126,8 @@ module Volley
         Volley::Log.debug e
       end
 
-      def argument(name, opts={ })
-        @argdefs[name] = opts
-        action "argument-#{name}", :pre do
-          n = name.to_sym
-          # had to make this more complex to handle valid "false" values
-          v = begin
-            if @argdata[n].nil?
-              if opts[:default].nil?
-                nil
-              else
-                opts[:default]
-              end
-            else
-              @argdata[n]
-            end
-          end
-          raise "arg '#{name}' is required, but not set" if opts[:required] && v.nil?
-          if opts[:convert]
-            if opts[:convert] == :boolean
-              v = boolean(v)
-            else
-              v = v.send(opts[:convert])
-            end
-          elsif block_given?
-            v = yield v
-          end
-          raise "arg '#{name}' is required, but not set (after convert)" if opts[:required] && v.nil?
-          @args.send("#{n}=", v)
-          @attributes.send("#{n}=", v) if opts[:attr]
-        end
+      def argument(name, opts={ }, &block)
+        @arguments[name.to_sym] = Volley::Dsl::Argument.new(name, opts.merge(:plan => self), &block)
       end
 
       def output(tf=true)
@@ -156,8 +140,9 @@ module Volley
       end
 
       def action(name, stage=:main, &block)
-        n = name.to_sym
-        @actions[stage] << { :name => n, :stage => stage, :block => block }
+        @stages[stage].action(name, :plan => self, :stage => stage, &block)
+        #n = name.to_sym
+        #@actions[stage] << { :name => n, :stage => stage, :block => block }
       end
 
       def push(&block)
@@ -315,18 +300,6 @@ module Volley
       end
 
       private
-
-      def boolean(value)
-        case value.class
-          when TrueClass, FalseClass
-            return value
-          else
-            return true if value =~ /^(1|t|true|y|yes)$/
-            return false if value =~ /^(0|f|false|n|no)$/
-        end
-        nil
-      end
-
       def process_arguments(raw)
         Volley::Log.debug "process arguments: #{raw.inspect}"
         if raw
@@ -335,7 +308,14 @@ module Volley
           Volley::Log.debug "KVS: #{kvs.inspect}"
           Volley::Log.debug "RAW: #{raw.inspect}"
           @rawargs = raw
-          @argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
+          #@argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
+          kvs.each do |a|
+            (k, v) = a.split(/:/)
+            if @arguments[k.to_sym]
+              Volley::Log.debug "setting argument: #{k} = #{v}"
+              @arguments[k.to_sym].value = v
+            end
+          end
         end
       end
     end

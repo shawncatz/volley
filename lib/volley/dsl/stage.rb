@@ -3,21 +3,36 @@ module Volley
   module Dsl
     class Stage
       def initialize(name, options={}, &block)
-        @name = name
+        @name = name.to_sym
+        @plan = options.delete(:plan)
         @options = {
-            :plan => nil
         }.merge(options)
         @actions = []
-        raise "plan instance must be set" unless @options[:plan]
+        raise "plan instance must be set" unless @plan
         instance_eval &block if block_given?
+      end
+
+      def call
+        Volley::Log.debug ".. #@name"
+        @actions.each do |action|
+          action.call
+        end
       end
 
       def add(action)
         @actions << action
       end
 
-      def action(name, &block)
-        @actions << Volley::Dsl::Action.new(name, &block)
+      def count
+        @actions.count
+      end
+
+      def action(name, options={}, &block)
+        o = {
+            :stage => @name,
+            :plan => nil,
+        }.merge(options)
+        @actions << Volley::Dsl::Action.new(name, o, &block)
       end
     end
   end
