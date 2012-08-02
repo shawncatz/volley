@@ -11,6 +11,10 @@ module Volley
         Volley::Dsl::Publisher.get
       end
 
+      def file(name)
+        Volley::Dsl::VolleyFile.load(name)
+      end
+
       def project(name)
         Volley::Dsl::Project.get(name)
       end

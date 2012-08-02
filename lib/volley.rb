@@ -5,7 +5,6 @@ require "active_support/all"
 require "volley/version"
 require "volley/config"
 require "volley/log"
-require "volley/volley_file"
 require "volley/publisher/base"
 require "volley/publisher/exceptions"
 require "volley/descriptor"
@@ -51,7 +50,7 @@ module Volley
             if pub.projects.include?(project)
               vf = pub.volleyfile(opts)
               Volley::Log.debug "downloaded volleyfile: #{vf}"
-              Volley::VolleyFile.load(vf)
+              Volley::Dsl::VolleyFile.load(vf)
               process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args, :second => true)
             else
               raise "project #{project} does not exist in configured publisher #{pub.class}"

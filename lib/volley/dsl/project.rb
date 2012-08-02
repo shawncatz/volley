@@ -8,7 +8,7 @@ module Volley
           n = name.to_sym
           @projects ||= {}
           if @projects[n]
-            #raise "defining project #{name} more than once"
+            raise "defining project #{name} more than once"
           else
             @projects[n] = new(n)
             @projects[n].instance_eval &block if block_given?
@@ -27,6 +27,10 @@ module Volley
         def exists?(name)
           n = name.to_sym
           @projects.keys.include?(n)
+        end
+
+        def unload
+          @projects = nil
         end
       end
 

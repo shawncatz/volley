@@ -92,7 +92,7 @@ module Volley
         Volley::Log.debug ".. #{name}"
         file = File.basename(name)
         path = "#{dir}/#{file}"
-        Volley::Log.info "-> s3:#@bucket/#{path}"
+        #Volley::Log.info "-> s3:#@bucket/#{path}"
         @dir        ||= @connection.directories.create({ :key => @bucket })
         s3f         = @dir.files.create(
             :key    => "#{path}",
@@ -104,7 +104,7 @@ module Volley
       end
 
       def pull_file(name, dir, ldir=nil)
-        Volley::Log.info "<- s3:#@bucket/#{dir}/#{name}"
+        #Volley::Log.info "<- s3:#@bucket/#{dir}/#{name}"
         if ldir
           FileUtils.mkdir_p(ldir)
         end

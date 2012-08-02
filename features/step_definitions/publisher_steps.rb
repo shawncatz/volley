@@ -1,7 +1,7 @@
 def publish(pr, br, vr)
   pwd = Dir.pwd
   Dir.chdir("test/project")
-  Volley::VolleyFile.load("Volleyfile")
+  Volley::Dsl::VolleyFile.load("Volleyfile")
   Volley.process(:project => pr, :plan => "publish", :branch => br, :version => vr)
   Dir.chdir(pwd)
 end
@@ -15,7 +15,7 @@ end
 Given /^I have a publisher with an empty repository$/ do
   %w{local remote}.each { |d| FileUtils.rm_rf("test/publisher/#{d}") }
   %w{local remote}.each { |d| FileUtils.mkdir_p("test/publisher/#{d}") }
-  Volley::VolleyFile.load("test/dsl/local_publisher.volleyfile")
+  Volley::Dsl::VolleyFile.load("test/dsl/local_publisher.volleyfile")
   Volley::Log.console_disable
   @pub = Volley::Dsl.publisher
 end

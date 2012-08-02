@@ -51,9 +51,9 @@ Options:
       config = options[:c]
       primary = options[:p]
 
-      Volley::VolleyFile.init
-      Volley::VolleyFile.load(config, :optional => true)
-      Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
+      Volley::Dsl::VolleyFile.init
+      Volley::Dsl::VolleyFile.load(config, :optional => true)
+      Volley::Dsl::VolleyFile.load(primary, :primary => true) if File.file?(primary)
       Volley.config.debug = debug
 
       plan = argv.shift
@@ -72,7 +72,7 @@ Options:
         raise "error: must specify descriptor" unless desc
         (project, branch, version) = desc.get
         raise "project #{project} not found" unless Volley::Dsl.project?(project)
-        raise "project #{project} plan #{plan} not found" unless Volley::Dsl.project(desc.project).plan?(desc.plan)
+        raise "project #{project} plan #{plan} not found" unless Volley::Dsl.project(project).plan?(plan)
       end
 
       if debug
@@ -105,8 +105,8 @@ Volley::Command.new.run(ARGV)
 #    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
 #
 #    def execute
-#      Volley::VolleyFile.load(config, :optional => true)
-#      Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
+#      Volley::Dsl::VolleyFile.load(config, :optional => true)
+#      Volley::Dsl::VolleyFile.load(primary, :primary => true) if File.file?(primary)
 #      Volley.config.debug = debug?
 #
 #      (project, plan, branch, version) = descriptor.split(/[:\@]/)

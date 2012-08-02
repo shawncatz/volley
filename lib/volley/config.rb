@@ -8,5 +8,12 @@ module Volley
     def meta
       @meta ||= Volley::Meta.new
     end
+
+    def unload
+      @config = nil
+      @meta = nil
+      Volley::Dsl::VolleyFile.unload
+      Volley::Dsl::Project.unload
+    end
   end
 end

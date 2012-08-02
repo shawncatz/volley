@@ -5,6 +5,7 @@ module Volley
     class Plan
       attr_accessor :rawargs
       attr_reader :project
+      attr_reader :actions
 
       def initialize(name, o={ }, &block)
         options = {
