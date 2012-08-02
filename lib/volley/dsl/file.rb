@@ -59,7 +59,7 @@ module Volley
         end
 
         def find_file(filename)
-          [File.expand_path(filename, __FILE__), File.expand_path(filename)].each do |f|
+          [filename, File.expand_path(filename), File.expand_path(filename, __FILE__)].each do |f|
             return f if File.file?(f)
           end
           nil

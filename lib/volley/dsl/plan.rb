@@ -6,6 +6,7 @@ module Volley
       attr_accessor :rawargs
       attr_reader :project
       attr_reader :actions
+      attr_reader :argdefs
 
       def initialize(name, o={ }, &block)
         options = {
@@ -76,7 +77,9 @@ module Volley
             @actions[stage].each do |act|
               Volley::Log.debug ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
               begin
+                Volley::Log.debug ".. .. before"
                 self.instance_eval(&act[:block])
+                Volley::Log.debug ".. .. after"
               rescue => e
                 Volley::Log.error "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
                 Volley::Log.debug e
@@ -105,8 +108,7 @@ module Volley
       end
 
       def load(file)
-        real = File.expand_path(file)
-        Volley::VolleyFile.load(real)
+        Volley::Dsl.file(file)
       rescue => e
         Volley::Log.error "failed to load file: #{e.message}: #{file} (#{real})"
         Volley::Log.debug e
