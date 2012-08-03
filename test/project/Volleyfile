@@ -1,9 +1,8 @@
-
 project :test do
   plan :publish do
     action :build do
       FileUtils.rm_f("file")
-      ver = "#{project.name}/#{args.branch}/#{args.version}"
+      ver = "#{project.name}/#{branch}/#{version}"
       File.open("file", "w") {|f| f.write(ver)}
     end
     push do

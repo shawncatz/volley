@@ -20,7 +20,8 @@ project :volley do
   end
   plan :latest do
     default do
-      (project,branch,version) = Volley::Descriptor.new(argv.first).get
+      ap args
+      (project,branch,version) = args.descriptor.get
       raise "project and branch must be specified" unless project && branch
 
       pub = Volley::Dsl.publisher
@@ -28,64 +29,58 @@ project :volley do
     end
   end
   plan :versions do
-    argument :project
-    argument :branch
-    argument :version
     argument :all, :convert => :boolean, :default => false
     argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
 
     default do
-      project = args.project
-      branch  = args.branch
-      version = args.version
-
-      if project.nil? && argv.count
-        first = argv.first
-        (p, b, v) = first.split(/\//) if first
-        if p
-          project = p
-          branch  = b
-          version = v
-        end
-      end
-
-      pub  = Volley::Dsl.publisher
-      data = []
-      if args.all
-        data = pub.all.keys.reject {|e| e =~ /latest$/}
-        data.each { |k, v| puts "%2s %s" % [v, k] }
-      else
-        if project
-          if branch
-            if version
-              data = pub.contents(project, branch, version)
-            else
-              data = pub.versions(project, branch)
-            end
-          else
-            data = pub.branches(project)
-          end
-        else
-          data = pub.projects
-        end
-
-        case args.output
-          when :json
-            puts data.to_json
-          when :xml
-            puts data.to_xml
-          else
-            data.each { |e| puts e }
-        end
-      end
+    #  project = args.project.name
+    #
+    #  if project.nil? && argv.count
+    #    first = argv.first
+    #    (p, b, v) = first.split(/\//) if first
+    #    if p
+    #      project = p
+    #      branch  = b
+    #      version = v
+    #    end
+    #  end
+    #
+    #  pub  = Volley::Dsl.publisher
+    #  data = []
+    #  if args.all
+    #    data = pub.all.keys.reject {|e| e =~ /latest$/}
+    #    data.each { |k, v| puts "%2s %s" % [v, k] }
+    #  else
+    #    if project
+    #      if branch
+    #        if version
+    #          data = pub.contents(project, branch, version)
+    #        else
+    #          data = pub.versions(project, branch)
+    #        end
+    #      else
+    #        data = pub.branches(project)
+    #      end
+    #    else
+    #      data = pub.projects
+    #    end
+    #
+    #    case args.output
+    #      when :json
+    #        puts data.to_json
+    #      when :xml
+    #        puts data.to_xml
+    #      else
+    #        data.each { |e| puts e }
+    #    end
+    #  end
     end
   end
   plan :remote do
-    argument :version, :required => true
 
     default do
       pub = Volley::Dsl.publisher
-      (pr, br, vr) = args.version.split(/[\:\/\.]/)
+      (pr, br, vr) = args.descriptor.get
       vr ||= 'latest'
       vf = pub.volleyfile(:project => pr, :branch => br, :version => vr)
       load vf

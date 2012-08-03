@@ -12,6 +12,8 @@ module Volley
         raise "plan instance must be set" unless @plan
 
         @plan.action :files, :post do
+          raise "branch(#{branch}) and version(#{version}) must be specified" unless branch && version
+
           list     = yield
           list     = [*list].flatten
           # use #exists? so it can work for directories
@@ -23,6 +25,8 @@ module Volley
 
         if attributes.pack
           @plan.action :pack, :post do
+            raise "branch(#{branch}) and version(#{version}) must be specified" unless branch && version
+
             path = attributes.pack_dir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
             Dir.mkdir(path)
             dir = Dir.pwd
@@ -58,7 +62,7 @@ module Volley
             Dir.chdir(path)
             case attributes.pack_type
               when "tgz"
-                n = "#{args.branch}-#{args.version}.tgz"
+                n = "#{branch}-#{version}.tgz"
                 c = "tar cvfz #{n} *"
                 Volley::Log.debug "command:#{c}"
                 command(c)
@@ -89,7 +93,7 @@ module Volley
 
         @plan.action :push, :post do
           publisher = Volley::Dsl.publisher
-          publisher.push(project.name, args.branch, args.version, attributes.artifact)
+          publisher.push(project.name, branch, version, attributes.artifact)
         end
       end
     end

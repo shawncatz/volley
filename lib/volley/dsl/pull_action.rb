@@ -17,8 +17,8 @@ module Volley
 
         @plan.action :download do
           pr = project.name
-          br = args.branch
-          ve = args.version
+          br = branch
+          ve = version
 
           pub  = Volley::Dsl.publisher
           raise "publisher must be defined" unless pub

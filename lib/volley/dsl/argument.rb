@@ -10,23 +10,26 @@ module Volley
       def initialize(name, options={ }, &block)
         @name     = name.to_sym
         @block    = block
-        @value    = nil
         @plan     = options.delete(:plan)
         @required = options.delete(:required)
         @default  = options.delete(:default)
         @convert  = options.delete(:convert)
+        @convopt  = options.delete(:convert_opts) || {}
         @choices  = options.delete(:choices)
+
+        @value    = @required ? nil : (@default || nil)
 
         raise "plan instance must be set" unless @plan
 
-        @plan.action "argument-#{name}", :pre do
-          arguments[name.to_sym].handler
-        end
+        #@plan.action "argument-#{name}", :pre do
+        #  arguments[name.to_sym].handler
+        #end
       end
 
-      def handler
+      def value=(value)
+        @value = value
         @value ||= @default unless @default.nil?
-        raise "arg '#{@name}' is required, but not set" if @required && @value.nil?
+        raise "arg '#@name' is required, but not set" if @required && @value.nil?
         if @convert.nil?
           if block_given?
             @value = yield @value
@@ -36,14 +39,40 @@ module Volley
             when :boolean
               @value = boolean(@value)
             when :descriptor
-              @value = Volley::Descriptor.new(@value)
+              @value = Volley::Descriptor.new(@value, @convopt)
             else
               @value = @value.send(@convert)
           end
         end
-        raise "arg '#{name}' is required, but not set (after convert)" if @required && @value.nil?
-        raise "arg '#{name}' should be one of #{@choices.inspect}" if @choices && !@choices.include?(@value)
+        raise "arg '#@name' is required, but not set (after convert)" if @required && @value.nil?
+        raise "arg '#@name' should be one of #{@choices.inspect}" if @choices && !@choices.include?(@value)
       end
+
+      def check
+        raise "arg '#@name' is required, but not set (in check)" if @required && @value.nil?
+      end
+
+      #def handler
+      #  @value ||= @default unless @default.nil?
+      #  raise "arg '#{@name}' is required, but not set" if @required && @value.nil?
+      #  if @convert.nil?
+      #    if block_given?
+      #      @value = yield @value
+      #    end
+      #  else
+      #    case @convert
+      #      when :boolean
+      #        @value = boolean(@value)
+      #      when :descriptor
+      #        opts = @convopt || {}
+      #        @value = Volley::Descriptor.new(@value, @convopt)
+      #      else
+      #        @value = @value.send(@convert)
+      #    end
+      #  end
+      #  raise "arg '#{name}' is required, but not set (after convert)" if @required && @value.nil?
+      #  raise "arg '#{name}' should be one of #{@choices.inspect}" if @choices && !@choices.include?(@value)
+      #end
 
       def usage
         v = @choices || @convert || "string"

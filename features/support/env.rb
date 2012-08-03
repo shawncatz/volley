@@ -7,9 +7,10 @@ root = Dir.pwd
 
 Volley::Log.add(:debug, "#{Dir.pwd}/log/volley.log")
 Volley::Log.console_disable
+Volley.config.project_root = root
 
 World do
-  @dir = Dir.pwd
+  @root = root
 end
 
 at_exit do

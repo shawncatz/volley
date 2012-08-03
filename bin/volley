@@ -6,7 +6,7 @@ require 'volley'
 require 'awesome_print'
 
 DOC = <<-DOC
-Usage: volley [options] <plan> <descriptor> <argument>...
+Usage: volley [options] <plan> <descriptor> [argument]...
 
 <plan>
   The plan to run.
@@ -61,21 +61,22 @@ module Volley
       Volley::Log.console_debug if debug
       Volley.config.debug = debug
 
+      plan = argv.shift
+      desc = argv.shift
+
       kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
       pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
 
-      plan = pos.shift
-      raise "error: must specify plan" unless plan
+      raise "must specify plan" unless plan
+      raise "must specify descriptor" unless desc
 
       if Volley::Dsl.project(:volley).plan?(plan)
         # the plan is reserved
-        desc = "volley"
-        kvs << "descriptor=volley"
+        plan = "volley:#{plan}"
       else
         # the plan isn't reserved
-        desc = pos.shift
-        raise "error: must specify descriptor" unless desc
-        kvs << "descriptor=#{desc}"
+        (project, branch, version) = Volley::Descriptor.new(desc).get
+        plan = "#{project}:#{plan}"
       end
 
       if debug

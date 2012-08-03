@@ -15,27 +15,26 @@ require "volley/dsl"
 module Volley
   class << self
     def process(opts)
+      project = nil
       plan    = opts[:plan]
       args    = opts[:args] || []
+      desc    = opts[:descriptor]
       second  = opts[:second]
-      project = nil
-      branch  = nil
-      version = nil
 
-      if opts[:descriptor]
-        (project, branch, version) = Volley::Descriptor.new(opts[:descriptor]).get
-      end
+      (project, plan) = plan.split(/:/) if plan =~ /\:/
+      (project, _, _) = Volley::Descriptor.new(desc).get unless project
 
       begin
-        Volley::Log.debug "PROCESS project:#{project} plan:#{plan} branch:#{branch} version:#{version} args:#{args}"
+        Volley::Log.debug "PROCESS plan:#{plan} descriptor:#{desc} args:#{args}"
         if Volley::Dsl.project?(project)
           # we have the project locally
           pr = Volley::Dsl.project(project)
           if pr.plan?(plan)
             # plan is defined
             pl = pr.plan(plan)
-            args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
-            args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
+            #args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
+            #args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
+            args << "descriptor:#{desc}"
             data = pl.call(:args => args)
 
             if plan == "deploy"

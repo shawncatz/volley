@@ -13,10 +13,10 @@ def deploy(desc)
 end
 
 Given /^I have a publisher with an empty repository$/ do
-  pwd = Dir.pwd
-  %w{local remote}.each { |d| FileUtils.rm_rf("#{pwd}/test/publisher/#{d}") }
-  %w{local remote}.each { |d| FileUtils.mkdir_p("#{pwd}/test/publisher/#{d}") }
-  Volley::Dsl::VolleyFile.load("test/dsl/local_publisher.volleyfile")
+  @root ||= Volley.config.project_root
+  %w{local remote}.each { |d| FileUtils.rm_rf("#@root/test/publisher/#{d}") }
+  %w{local remote}.each { |d| FileUtils.mkdir_p("#@root/test/publisher/#{d}") }
+  Volley::Dsl::VolleyFile.load("#@root/test/dsl/local_publisher.volleyfile")
   @pub = Volley::Dsl.publisher
 end
 
@@ -37,14 +37,6 @@ end
 
 Then /^I should see an empty list$/ do
   fail unless @emptylist.count == 0
-end
-
-Then /^I should receive an exception$/ do
-  fail if @exception.nil?
-end
-
-Then /^I should not receive an exception$/ do
-  fail unless @exception.nil?
 end
 
 When /^I publish the artifact (.*)$/ do |desc|

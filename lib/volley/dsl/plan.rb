@@ -38,12 +38,9 @@ module Volley
         instance_eval &block if block_given?
 
         if @attributes.remote
-          argument :branch, :default => nil do |v|
-            v || source.branch || nil
-          end
-          argument :version, :default => "latest" do |v|
-            !v || v == "latest" ? source.revision : v
-          end
+          argument :descriptor, :required => true, :convert => :descriptor
+        else
+          argument :descriptor, :convert => :descriptor, :convert_opts => { :partial => true }
         end
       end
 
@@ -52,15 +49,14 @@ module Volley
         @origargs = options[:args]
         data      = @origargs
 
-        if options[:descriptor]
-          @descriptor = Volley::Descriptor(options[:descriptor])
-          data << "branch:#{@descriptor.branch}"
-          data << "version:#{@descriptor.version}"
-        end
-
         process_arguments(data)
+
+        raise "descriptor must be specified" if @attributes.remote && !args.descriptor
+        #raise "cannot determine branch" unless branch
+        #raise "cannot determine version" unless version
+
         run_actions
-        [args.branch, args.version].join(":")
+        [branch, version].join(":")
       end
 
       def usage
@@ -88,6 +84,23 @@ module Volley
 
       def source
         @project.source or raise "SCM not configured"
+      end
+
+      def remote(tf)
+        raise "remote can only be set to true or false" unless [true,false].include?(tf)
+        @attributes.remote = tf
+      end
+
+      def branch
+        (args.descriptor ? args.descriptor.branch : nil) || source.branch || nil
+      end
+
+      def version
+        v = args.descriptor ? args.descriptor.version : nil
+        if v == "latest"
+          v = source.version || nil
+        end
+        v
       end
 
       def log(msg)
@@ -154,7 +167,7 @@ module Volley
         }.merge(opts)
 
         action "volley-#{o[:project]}-#{o[:plan]}" do
-          options = { :branch => args.branch||source.branch, :version => args.version||source.revision, :args => @origargs }.merge(o)
+          options = { :plan => "#{project}:#{plan}", :descriptor => "#{project}@#{branch}:#{version}", :args => @origargs }.merge(o)
           Volley.process(options)
         end
       end
@@ -195,6 +208,9 @@ module Volley
               @arguments[k.to_sym].value = v
             end
           end
+        end
+        @arguments.each do |k, v|
+          v.check
         end
       end
     end
