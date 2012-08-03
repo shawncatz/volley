@@ -13,7 +13,6 @@ module Volley
         }.merge(options)
         raise "stage instance must be set" unless @stage
         raise "plan instance must be set" unless @plan
-        #instance_eval &block if block_given?
       end
 
       def call

@@ -4,8 +4,6 @@ project :test do
     action :build do
       FileUtils.rm_f("file")
       ver = "#{project.name}/#{args.branch}/#{args.version}"
-      log "TEST : PUBLISH : #{ver}"
-      log "ARGS: #{args.inspect}"
       File.open("file", "w") {|f| f.write(ver)}
     end
     push do
