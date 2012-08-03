@@ -5,7 +5,7 @@ module Volley
         def init
           @loaded ||= { }
 
-          ["/etc/Volleyfile", "~/.Volleyfile", "../../../conf/common.volleyfile"].each do |f|
+          ["/etc/Volleyfile", "~/.Volleyfile", "../../../../conf/common.volleyfile"].each do |f|
             load(f, :optional => true)
           end
         end
@@ -52,7 +52,7 @@ module Volley
 
           file   = find_file(filename)
           exists = file && File.file?(file)
-          Volley::Log.debug "LOAD: [#{exists}] #{filename}"
+          Volley::Log.debug "LOAD: [#{exists}] #{filename} (#{file})"
           return unless exists
           @loaded[file] ||= instance_eval(File.read(file), file)
           file

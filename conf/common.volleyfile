@@ -1,6 +1,7 @@
 project :volley do
   scm :base
   plan :init, :remote => false do
+    argument :blarg, :default => "hello"
     default do
       file = File.expand_path("../../init/Volleyfile", __FILE__)
       dest = "#{Dir.pwd}/Volleyfile"
@@ -20,16 +21,16 @@ project :volley do
   end
   plan :latest do
     default do
-      (project,branch,version) = Volley::Descriptor.new(rawargs.first).get
+      (project,branch,version) = Volley::Descriptor.new(argv.first).get
 
-      if project.nil? && rawargs
-        first = rawargs.first
-        (p, b) = first.split(/\//) if first
-        if p
-          project = p
-          branch  = b
-        end
-      end
+      #if project.nil? && argv.count
+      #  first = argv.first
+      #  (p, b) = first.split(/\//) if first
+      #  if p
+      #    project = p
+      #    branch  = b
+      #  end
+      #end
       raise "project and branch must be specified" unless project && branch
 
       pub = Volley::Dsl.publisher
@@ -48,8 +49,8 @@ project :volley do
       branch  = args.branch
       version = args.version
 
-      if project.nil? && rawargs
-        first = rawargs.first
+      if project.nil? && argv.count
+        first = argv.first
         (p, b, v) = first.split(/\//) if first
         if p
           project = p

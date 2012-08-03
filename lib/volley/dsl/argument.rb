@@ -15,12 +15,10 @@ module Volley
         @required = options.delete(:required)
         @default  = options.delete(:default)
         @convert  = options.delete(:convert)
+        @choices  = options.delete(:choices)
 
         raise "plan instance must be set" unless @plan
 
-        # the use of the argument variable because of the fact that this action
-        # will execute in the Action class context, not the Argument class.
-        #argument = self
         @plan.action "argument-#{name}", :pre do
           arguments[name.to_sym].handler
         end
@@ -41,6 +39,14 @@ module Volley
           end
         end
         raise "arg '#{name}' is required, but not set (after convert)" if @required && @value.nil?
+        raise "arg '#{name}' should be one of #{@choices.inspect}" if @choices && !@choices.include?(@value)
+      end
+
+      def usage
+        v = @choices || @convert || "string"
+        r = @required ? "*" : ""
+        d = @default  ? "(#@default)" : ""
+        "#@name:#{v}#{r}#{d}"
       end
 
       def boolean(value)

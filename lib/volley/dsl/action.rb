@@ -20,7 +20,7 @@ module Volley
         self.instance_eval &@block if @block
       end
 
-      delegate :project, :args, :files, :file, :attributes, :log, :arguments,
+      delegate :project, :args, :files, :file, :attributes, :log, :arguments, :argv,
                :to => :plan
 
       def command(cmd)

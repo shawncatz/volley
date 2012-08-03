@@ -32,4 +32,8 @@ describe Volley::Descriptor do
       expect { Volley::Descriptor.new(desc) }.to raise_error(StandardError)
     end
   end
+
+  it "should allow partials when specified" do
+    expect { Volley::Descriptor.new("environment", :partial => true)}.not_to raise_exception
+  end
 end

@@ -32,7 +32,7 @@ module Volley
             pl = pr.plan(plan)
             args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
             args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
-            data = pl.call(:rawargs => args)
+            data = pl.call(:args => args)
 
             if plan == "deploy"
               Volley.meta[project] = data

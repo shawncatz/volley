@@ -3,7 +3,7 @@ require 'tempfile'
 module Volley
   module Dsl
     class Plan
-      attr_accessor :rawargs
+      attr_accessor :argv
       attr_reader :project
       attr_reader :stages
       attr_reader :arguments
@@ -27,6 +27,7 @@ module Volley
         @block       = block
         @files       = []
         @arguments   = { }
+        @argv        = []
         @stages      = {
             :pre  => Volley::Dsl::Stage.new(:pre, :plan => self),
             :main => Volley::Dsl::Stage.new(:main, :plan => self),
@@ -48,34 +49,42 @@ module Volley
 
       def call(options={ })
         Volley::Log.debug "## #{@project.name} : #@name"
-        @origargs = options[:rawargs]
-        process_arguments(options[:rawargs])
+        @origargs = options[:args]
+        process_arguments(options[:args])
         run_actions
         [args.branch, args.version].join(":")
       end
 
-      def full_usage
-        out = []
-        @argdefs.each do |n, arg|
-          t = arg[:convert] || "string"
-          r = arg[:required]
-          #o = "#{n}:#{t}"
-          #o = "[#{o}]" unless r
-          d = arg[:default] ? "default: #{arg[:default]}" : ""
-          o = "%15s %15s %1s %s" % [n, t, (r ? '*' : ''), d]
-          out << "#{o}"
-        end
-        out
-      end
+      #def full_usage
+      #  out = []
+      #  @argdefs.each do |n, arg|
+      #    t = arg[:convert] || "string"
+      #    r = arg[:required]
+      #    #o = "#{n}:#{t}"
+      #    #o = "[#{o}]" unless r
+      #    d = arg[:default] ? "default: #{arg[:default]}" : ""
+      #    o = "%15s %15s %1s %s" % [n, t, (r ? '*' : ''), d]
+      #    out << "#{o}"
+      #  end
+      #  out
+      #end
+      #
+      #def usage
+      #  out = []
+      #  @argdefs.each do |n, arg|
+      #    t = arg[:convert] || "string"
+      #    r = arg[:required]
+      #    d = arg[:default] ? "#{arg[:default]}" : ""
+      #    v = arg[:choices] ? "[#{arg[:choices].join(",")}]" : "<#{n}>"
+      #    out << "#{n}:#{v}#{"*" if r}"
+      #  end
+      #  out.join(" ")
+      #end
 
       def usage
         out = []
-        @argdefs.each do |n, arg|
-          t = arg[:convert] || "string"
-          r = arg[:required]
-          d = arg[:default] ? "#{arg[:default]}" : ""
-          v = arg[:choices] ? "[#{arg[:choices].join(",")}]" : "<#{n}>"
-          out << "#{n}:#{v}#{"*" if r}"
+        @arguments.each do |n, arg|
+          out << arg.usage
         end
         out.join(" ")
       end
@@ -196,7 +205,7 @@ module Volley
         if raw
           kvs = raw.select { |e| e =~ /\:/ }
           raw = raw.reject { |e| e =~ /\:/ }
-          @rawargs = raw
+          @argv = raw
           kvs.each do |a|
             (k, v) = a.split(/:/)
             if @arguments[k.to_sym]

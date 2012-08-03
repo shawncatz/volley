@@ -96,14 +96,14 @@ describe Volley::Dsl::Plan do
   it "should handle arguments" do
     @plan.argument(:testarg)
     expect(@plan.arguments.count).to eq(3) # branch, version and testarg
-    @plan.call(:rawargs => ["testarg:true"])
+    @plan.call(:args => ["testarg:true"])
     expect(@plan.args.testarg).to eq("true")
   end
 
   # boolean as strings because we test conversion later
   it "should handle argument defaults" do
     @plan.argument(:testarg, :default => "false")
-    expect {@plan.call(:rawargs => [])}.not_to raise_exception
+    expect {@plan.call(:args => [])}.not_to raise_exception
     Volley::Log.debug "ARGS: #{@plan.args.inspect}"
     expect(@plan.args.testarg).to eq("false")
   end
@@ -111,13 +111,13 @@ describe Volley::Dsl::Plan do
   # boolean as strings because we test conversion later
   it "should handle arguments overriding defaults" do
     @plan.argument(:testarg, :default => "false")
-    expect {@plan.call(:rawargs => ["testarg:true"])}.not_to raise_exception
+    expect {@plan.call(:args => ["testarg:true"])}.not_to raise_exception
     expect(@plan.args.testarg).to eq("true")
   end
 
   it "should fail if required arguments aren't specified" do
     @plan.argument(:testarg, :required => true)
-    expect {@plan.call(:rawargs => [])}.to raise_exception
+    expect {@plan.call(:args => [])}.to raise_exception
   end
 
   [
@@ -128,7 +128,7 @@ describe Volley::Dsl::Plan do
     (type, original, value) = arg
     it "should handle converting argument: #{type}" do
       @plan.argument(type, :convert => type.to_sym)
-      @plan.call(:rawargs => ["#{type}:#{original}"])
+      @plan.call(:args => ["#{type}:#{original}"])
       expect(@plan.args.send(type.to_sym)).to eq(value)
     end
   end
