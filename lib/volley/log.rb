@@ -14,13 +14,24 @@ module Volley
           console_disable
           @loggers["STDOUT"] = Yell.new(dest, :level => level, :format => format)
         else
-          @loggers[dest] = Yell.new(:datefile, dest, :level => level, :format => format,
-                               :keep => 7, :symlink_original_filename => true)
+          if @loggers[dest]
+            Volley::Log.debug "log destination '#{dest}' already exists..."
+          else
+            FileUtils.mkdir_p(File.dirname(dest))
+            @loggers[dest] = Yell.new(:datefile, dest, :level => level, :format => format,
+                                      :keep => 7, :symlink_original_filename => true)
+          end
         end
       end
 
       def console_disable
         %w{STDOUT STDERR}.each {|s| @loggers.delete(s)}
+      end
+
+      def console_debug
+        console_disable
+        @loggers["STDOUT"] = Yell.new(STDOUT, :level => [:debug,:info,:warn], :format => Yell::NoFormat)
+        @loggers["STDERR"] = Yell.new(STDERR, :level => [:error,:fatal], :format => Yell::NoFormat)
       end
 
       %w{debug info warn error fatal}.each do |method_name|

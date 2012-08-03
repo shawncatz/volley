@@ -15,12 +15,16 @@ require "volley/dsl"
 module Volley
   class << self
     def process(opts)
-      project = opts[:project]
       plan    = opts[:plan]
-      branch  = opts[:branch]
-      version = opts[:version]
       args    = opts[:args] || []
       second  = opts[:second]
+      project = nil
+      branch  = nil
+      version = nil
+
+      if opts[:descriptor]
+        (project, branch, version) = Volley::Descriptor.new(opts[:descriptor]).get
+      end
 
       begin
         Volley::Log.debug "PROCESS project:#{project} plan:#{plan} branch:#{branch} version:#{version} args:#{args}"

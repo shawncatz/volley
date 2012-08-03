@@ -122,6 +122,7 @@ describe Volley::Dsl::Plan do
 
   [
       ["boolean", "true", true],
+      ["descriptor", "test@trunk/1", Volley::Descriptor.new("test@trunk/1")],
       ["to_i", "1", 1],
       ["to_f", "1.12", 1.12],
   ].each do |arg|

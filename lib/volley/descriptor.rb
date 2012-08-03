@@ -16,5 +16,9 @@ module Volley
     def get
       [@project, @branch, @version]
     end
+
+    def ==(other)
+      @project == other.project && @branch == other.branch && @version == other.version
+    end
   end
 end

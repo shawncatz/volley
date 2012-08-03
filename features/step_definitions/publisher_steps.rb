@@ -1,14 +1,14 @@
-def publish(pr, br, vr)
+def publish(desc)
   pwd = Dir.pwd
   Dir.chdir("test/project")
   Volley::Dsl::VolleyFile.load("Volleyfile")
-  Volley.process(:project => pr, :plan => "publish", :branch => br, :version => vr)
+  Volley.process(:plan => "publish", :descriptor => desc)
   Dir.chdir(pwd)
 end
 
-def deploy(pr, br, vr)
+def deploy(desc)
   pwd = Dir.pwd
-  Volley.process(:project => pr, :plan => "deploy", :branch => br, :version => vr)
+  Volley.process(:plan => "deploy", :descriptor => desc)
   Dir.chdir(pwd)
 end
 
@@ -47,36 +47,36 @@ Then /^I should not receive an exception$/ do
   fail unless @exception.nil?
 end
 
-When /^I publish the artifact (.*)\/(.*)\/(.*)$/ do |pr, br, vr|
-  publish(pr, br, vr)
+When /^I publish the artifact (.*)$/ do |desc|
+  publish(desc)
 end
 
-When /^I deploy the artifact (.*)\/(.*)\/(.*)$/ do |pr, br, vr|
+When /^I deploy the artifact (.*)$/ do |desc|
   begin
-    deploy(pr,br,vr)
+    deploy(desc)
   rescue => e
     @exception = e
   end
 end
 
-When /^I publish a duplicate artifact (.*)\/(.*)\/(.*)$/ do |pr, br, vr|
+When /^I publish a duplicate artifact (.*)$/ do |desc|
   steps %Q{
-    When I publish the artifact #{pr}/#{br}/#{vr}
+    When I publish the artifact #{desc}
   }
   begin
-    publish(pr, br, vr)
+    publish(desc)
   rescue => e
     @exception = e
   end
 end
 
 # TODO: make this work
-When /^I force publish a duplicate artifact (.*)\/(.*)\/(.*)$/ do |pr, br, vr|
+When /^I force publish a duplicate artifact (.*)$/ do |desc|
   steps %Q{
-    When I publish the artifact #{pr}/#{br}/#{vr}
+    When I publish the artifact #{desc}
         }
   begin
-    publish(pr, br, vr)
+    publish(desc)
   rescue => e
     puts "EXCEPTION"
     @exception = e

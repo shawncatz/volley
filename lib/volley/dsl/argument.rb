@@ -32,10 +32,13 @@ module Volley
             @value = yield @value
           end
         else
-          if @convert == :boolean
-            @value = boolean(@value)
-          else
-            @value = @value.send(@convert)
+          case @convert
+            when :boolean
+              @value = boolean(@value)
+            when :descriptor
+              @value = Volley::Descriptor.new(@value)
+            else
+              @value = @value.send(@convert)
           end
         end
         raise "arg '#{name}' is required, but not set (after convert)" if @required && @value.nil?
@@ -45,7 +48,7 @@ module Volley
       def usage
         v = @choices || @convert || "string"
         r = @required ? "*" : ""
-        d = @default  ? "(#@default)" : ""
+        d = @default ? "(#@default)" : ""
         "#@name:#{v}#{r}#{d}"
       end
 

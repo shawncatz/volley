@@ -10,7 +10,7 @@ module Volley
       attr_reader :attributes
 
       def initialize(name, o={ }, &block)
-        options = {
+        options     = {
             :name      => name,
             :project   => nil,
             :output    => false,
@@ -19,7 +19,7 @@ module Volley
             :pack      => true,
             :pack_type => "tgz",
         }.merge(o)
-        @attributes  = OpenStruct.new(options)
+        @attributes = OpenStruct.new(options)
         raise "project instance must be set" if @attributes.project.nil?
 
         @name        = name.to_sym
@@ -50,36 +50,18 @@ module Volley
       def call(options={ })
         Volley::Log.debug "## #{@project.name} : #@name"
         @origargs = options[:args]
-        process_arguments(options[:args])
+        data      = @origargs
+
+        if options[:descriptor]
+          @descriptor = Volley::Descriptor(options[:descriptor])
+          data << "branch:#{@descriptor.branch}"
+          data << "version:#{@descriptor.version}"
+        end
+
+        process_arguments(data)
         run_actions
         [args.branch, args.version].join(":")
       end
-
-      #def full_usage
-      #  out = []
-      #  @argdefs.each do |n, arg|
-      #    t = arg[:convert] || "string"
-      #    r = arg[:required]
-      #    #o = "#{n}:#{t}"
-      #    #o = "[#{o}]" unless r
-      #    d = arg[:default] ? "default: #{arg[:default]}" : ""
-      #    o = "%15s %15s %1s %s" % [n, t, (r ? '*' : ''), d]
-      #    out << "#{o}"
-      #  end
-      #  out
-      #end
-      #
-      #def usage
-      #  out = []
-      #  @argdefs.each do |n, arg|
-      #    t = arg[:convert] || "string"
-      #    r = arg[:required]
-      #    d = arg[:default] ? "#{arg[:default]}" : ""
-      #    v = arg[:choices] ? "[#{arg[:choices].join(",")}]" : "<#{n}>"
-      #    out << "#{n}:#{v}#{"*" if r}"
-      #  end
-      #  out.join(" ")
-      #end
 
       def usage
         out = []
@@ -203,8 +185,8 @@ module Volley
       def process_arguments(raw)
         Volley::Log.debug ".. process arguments: #{raw.inspect}"
         if raw
-          kvs = raw.select { |e| e =~ /\:/ }
-          raw = raw.reject { |e| e =~ /\:/ }
+          kvs   = raw.select { |e| e =~ /\:/ }
+          raw   = raw.reject { |e| e =~ /\:/ }
           @argv = raw
           kvs.each do |a|
             (k, v) = a.split(/:/)
