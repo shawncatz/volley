@@ -3,7 +3,10 @@ project :test do
   plan :publish do
     action :build do
       FileUtils.rm_f("file")
-      File.open("file", "w") {|f| f.write("#{project}/#{args.branch}/#{args.version}")}
+      ver = "#{project.name}/#{args.branch}/#{args.version}"
+      log "TEST : PUBLISH : #{ver}"
+      log "ARGS: #{args.inspect}"
+      File.open("file", "w") {|f| f.write(ver)}
     end
     push do
       ["file"]

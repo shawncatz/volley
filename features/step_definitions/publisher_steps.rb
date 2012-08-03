@@ -13,10 +13,10 @@ def deploy(pr, br, vr)
 end
 
 Given /^I have a publisher with an empty repository$/ do
-  %w{local remote}.each { |d| FileUtils.rm_rf("test/publisher/#{d}") }
-  %w{local remote}.each { |d| FileUtils.mkdir_p("test/publisher/#{d}") }
+  pwd = Dir.pwd
+  %w{local remote}.each { |d| FileUtils.rm_rf("#{pwd}/test/publisher/#{d}") }
+  %w{local remote}.each { |d| FileUtils.mkdir_p("#{pwd}/test/publisher/#{d}") }
   Volley::Dsl::VolleyFile.load("test/dsl/local_publisher.volleyfile")
-  Volley::Log.console_disable
   @pub = Volley::Dsl.publisher
 end
 

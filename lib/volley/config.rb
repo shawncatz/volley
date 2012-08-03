@@ -10,6 +10,7 @@ module Volley
     end
 
     def unload
+      Volley::Log.debug "Unload"
       @config = nil
       @meta = nil
       Volley::Dsl::VolleyFile.unload

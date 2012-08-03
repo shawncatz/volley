@@ -44,7 +44,7 @@ module Volley
       end
 
       def config
-        @config ||= OpenStruct.new
+        Volley.config
       end
 
       def log(msg)

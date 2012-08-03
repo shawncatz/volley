@@ -2,6 +2,8 @@
 module Volley
   module Dsl
     class Action
+      attr_reader :plan
+
       def initialize(name, options={}, &block)
         @name = name.to_sym
         @stage = options.delete(:stage)
@@ -19,12 +21,11 @@ module Volley
         self.instance_eval &@block if @block
       end
 
-      def project
-        @plan.project
-      end
+      delegate :project, :args, :files, :file, :attributes, :log, :arguments,
+               :to => :plan
 
-      def args
-        @plan.args
+      def command(cmd)
+        @plan.shellout(cmd)
       end
     end
   end

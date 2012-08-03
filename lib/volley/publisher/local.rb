@@ -16,6 +16,7 @@ module Volley
 
       def exists?(project, branch, version)
         d = "#@directory/#{project}/#{branch}/#{version}"
+        Volley::Log.debug "exists? #{d}"
         File.directory?(d)
       end
 

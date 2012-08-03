@@ -1,6 +1,6 @@
 project :volley do
   scm :base
-  plan :init do
+  plan :init, :remote => false do
     default do
       file = File.expand_path("../../init/Volleyfile", __FILE__)
       dest = "#{Dir.pwd}/Volleyfile"
@@ -8,7 +8,7 @@ project :volley do
       puts "created: #{dest}"
     end
   end
-  plan :list do
+  plan :list, :remote => false do
     default do
       Volley::Dsl::Project.projects.each do |p, project|
         Volley::Log.info "project: #{p}"

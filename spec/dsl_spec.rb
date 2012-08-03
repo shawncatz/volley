@@ -81,6 +81,13 @@ describe Volley::Dsl::Plan do
     expect {@plan.source.branch}.not_to raise_exception
   end
 
+  it "should be able to access global config" do
+    Volley.config.blarg = true
+    expect do
+      raise "fail" unless @plan.config.blarg == true
+    end.not_to raise_exception
+  end
+
   it "should be able to load another Volleyfile" do
     expect {@plan.load("#{root}/test/dsl/simple.volleyfile")}.not_to raise_exception
     expect(Volley::Dsl.project(:test)).not_to be(nil)
@@ -97,6 +104,7 @@ describe Volley::Dsl::Plan do
   it "should handle argument defaults" do
     @plan.argument(:testarg, :default => "false")
     expect {@plan.call(:rawargs => [])}.not_to raise_exception
+    Volley::Log.debug "ARGS: #{@plan.args.inspect}"
     expect(@plan.args.testarg).to eq("false")
   end
 

@@ -5,43 +5,49 @@ module Volley
     class Plan
       attr_accessor :rawargs
       attr_reader :project
-      attr_reader :actions
       attr_reader :stages
       attr_reader :arguments
+      attr_reader :attributes
 
       def initialize(name, o={ }, &block)
         options = {
             :name      => name,
-            :output    => false,
             :project   => nil,
+            :output    => false,
             :encrypt   => false,
+            :remote    => true,
             :pack      => true,
             :pack_type => "tgz",
         }.merge(o)
-        raise "project instance must be set" if options[:project].nil?
-        @project    = options[:project]
-        @block      = block
-        @attributes = OpenStruct.new(options)
-        #@args       = OpenStruct.new
-        #@actions    = { :pre => [], :main => [], :post => [] }
-        @arguments  = { }
-        @stages = {
-            :pre => Volley::Dsl::Stage.new(:pre, :plan => self),
+        @attributes  = OpenStruct.new(options)
+        raise "project instance must be set" if @attributes.project.nil?
+
+        @name        = name.to_sym
+        @project     = options[:project]
+        @block       = block
+        @files       = []
+        @arguments   = { }
+        @stages      = {
+            :pre  => Volley::Dsl::Stage.new(:pre, :plan => self),
             :main => Volley::Dsl::Stage.new(:main, :plan => self),
             :post => Volley::Dsl::Stage.new(:post, :plan => self),
         }
         @stage_order = [:pre, :main, :post]
+
         instance_eval &block if block_given?
 
-        argument :branch, :default => nil do |v|
-          v || source.branch || nil
-        end
-        argument :version, :default => "latest" do |v|
-          !v || v == "latest" ? source.revision : v
+        if @attributes.remote
+          argument :branch, :default => nil do |v|
+            v || source.branch || nil
+          end
+          argument :version, :default => "latest" do |v|
+            !v || v == "latest" ? source.revision : v
+          end
         end
       end
 
       def call(options={ })
+        Volley::Log.debug "## #{@project.name} : #@name"
         @origargs = options[:rawargs]
         process_arguments(options[:rawargs])
         #instance_eval &@block
@@ -105,10 +111,7 @@ module Volley
       end
 
       def args
-        @args ||= begin
-          hash = @arguments.inject({}) {|h, e| (k,v)=e; h[k] = v.value; h}
-          OpenStruct.new(hash)
-        end
+        @args = OpenStruct.new(@arguments.inject({ }) { |h, e| (k, v)=e; h[k] = v.value; h })
       end
 
       def source
@@ -124,6 +127,10 @@ module Volley
       rescue => e
         Volley::Log.error "failed to load file: #{e.message}: #{file} (#{real})"
         Volley::Log.debug e
+      end
+
+      def config
+        Volley.config
       end
 
       def argument(name, opts={ }, &block)
@@ -145,30 +152,39 @@ module Volley
         #@actions[stage] << { :name => n, :stage => stage, :block => block }
       end
 
+      def file(file)
+        @files << file
+      end
+
+      def files(*list)
+        list = [*list].flatten
+        if @files.count > 0 && list.count > 0
+          Volley::Log.warn "overriding file list"
+          Volley::Log.debug "files: #{@files.inspect}"
+          Volley::Log.debug "new: #{list.inspect}"
+        end
+        @files = list if list.count > 0
+        @files
+      end
+
       def push(&block)
         action :files, :post do
-          list     = begin
-            case block.arity
-              when 1
-                yield @attributes.dup
-              else
-                yield
-            end
-          end
+          list     = yield
           list     = [*list].flatten
+          # use #exists? so it can work for directories
           notfound = list.reject { |f| File.exists?(f) }
           raise "built files not found: #{notfound.join(",")}" unless notfound.count == 0
-          @attributes.artifact_list = list
-          @attributes.artifact_list << Volley.config.volleyfile if Volley.config.volleyfile
+          files list
+          file Volley.config.volleyfile if Volley.config.volleyfile
         end
 
-        if @attributes.pack
+        if attributes.pack
           action :pack, :post do
-            path = @attributes.pack_dir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
+            path = attributes.pack_dir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
             Dir.mkdir(path)
             dir = Dir.pwd
 
-            @attributes.artifact_list.each do |art|
+            files.each do |art|
               Volley::Log.debug "art:#{art}"
               next unless art
               if art =~ /^\// && art !~ /^#{dir}/
@@ -197,71 +213,72 @@ module Volley
 
             origpath = Dir.pwd
             Dir.chdir(path)
-            case @attributes.pack_type
+            case attributes.pack_type
               when "tgz"
                 n = "#{args.branch}-#{args.version}.tgz"
                 c = "tar cvfz #{n} *"
                 Volley::Log.debug "command:#{c}"
-                shellout(c)
+                command(c)
 
-                @attributes.artifact = "#{path}/#{n}"
+                attributes.artifact = "#{path}/#{n}"
               else
-                raise "unknown pack type '#{@attributes.pack_type}'"
+                raise "unknown pack type '#{attributes.pack_type}'"
             end
 
             Dir.chdir(origpath)
           end
         end
 
-        if @attributes.encrypt
+        if attributes.encrypt
           action :encrypt, :post do
-            art = @attributes.artifact
-            key = @attributes.encrypt_key
+            art = attributes.artifact
+            key = attributes.encrypt_key
             cpt = "#{art}.cpt"
 
             raise "in action encrypt: artifact file does not exist: #{art}" unless File.file?(art)
-            raise "in action encrypt: encrypted file #{cpt} already exists" if File.file?(cpt) && !@attributes.encrypt_overwrite
+            raise "in action encrypt: encrypted file #{cpt} already exists" if File.file?(cpt) && !attributes.encrypt_overwrite
             shellout("ccrypt -e --key '#{key}' #{art}")
 
-            @attributes.artifact_unencrypted = art
-            @attributes.artifact             = cpt
+            attributes.artifact_unencrypted = art
+            attributes.artifact             = cpt
           end
         end
 
         action :push, :post do
           publisher = Volley::Dsl.publisher
-          publisher.push(@project.name, args.branch, args.version, @attributes.artifact)
+          publisher.push(project.name, args.branch, args.version, attributes.artifact)
         end
       end
 
       def pull
-
         dir  = nil
         pub  = nil
         file = nil
         tgz  = nil
 
         action :download do
-          pr = @project.name
+          pr = project.name
           br = args.branch
           ve = args.version
 
           pub  = Volley::Dsl.publisher
+          raise "publisher must be defined" unless pub
           file = pub.pull(pr, br, ve)
 
           dir = File.dirname(file)
-          Volley::Log.info "changing directory: #{dir} (#{file})"
         end
 
         action :unpack do
           FileUtils.mkdir_p("#{dir}/unpack")
+          Volley::Log.info "changing directory: #{dir} (#{file})"
           Dir.chdir("#{dir}/unpack")
           tgz = %x{tar xvfz #{file} 2>/dev/null}
           File.open("#{dir}/tgz.log", "w") { |f| f.write(tgz) }
         end
 
         action :run do
-          yield "#{dir}/unpack" if dir && File.directory?("#{dir}/unpack")
+          raise "failed to unpack: #{dir}/unpack" unless dir && File.directory?("#{dir}/unpack")
+          yield "#{dir}/unpack"
         end
       end
 
@@ -301,22 +318,21 @@ module Volley
 
       private
       def process_arguments(raw)
-        Volley::Log.debug "process arguments: #{raw.inspect}"
+        Volley::Log.debug ".. process arguments: #{raw.inspect}"
         if raw
           kvs = raw.select { |e| e =~ /\:/ }
           raw = raw.reject { |e| e =~ /\:/ }
-          Volley::Log.debug "KVS: #{kvs.inspect}"
-          Volley::Log.debug "RAW: #{raw.inspect}"
           @rawargs = raw
           #@argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
           kvs.each do |a|
             (k, v) = a.split(/:/)
             if @arguments[k.to_sym]
-              Volley::Log.debug "setting argument: #{k} = #{v}"
+              Volley::Log.debug ".. .. setting argument: #{k} = #{v}"
               @arguments[k.to_sym].value = v
             end
           end
         end
+        #@args = OpenStruct.new(@arguments.inject({ }) { |h, e| (k, v)=e; h[k] = v.value; h })
       end
     end
   end

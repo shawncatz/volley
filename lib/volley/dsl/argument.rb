@@ -20,27 +20,27 @@ module Volley
 
         # the use of the argument variable because of the fact that this action
         # will execute in the Action class context, not the Argument class.
-        argument = self
+        #argument = self
         @plan.action "argument-#{name}", :pre do
-          argument.value ||= argument.default unless argument.default.nil?
-          Volley::Log.debug "argument #{argument.name} = #{argument.value.inspect}"
-          raise "arg '#{argument.name}' is required, but not set" if argument.required && argument.value.nil?
-          if argument.convert.nil?
-            if block_given?
-              argument.value = yield argument.value
-            end
-          else
-            Volley::Log.debug "argument #{argument.name} convert #{argument.convert}"
-            if argument.convert == :boolean
-              argument.value = argument.boolean(argument.value)
-            else
-              argument.value = argument.value.send(argument.convert)
-            end
-          end
-          raise "arg '#{name}' is required, but not set (after convert)" if argument.required && argument.value.nil?
-
-          Volley::Log.debug "ARGUMENT: #{argument.name} = #{argument.value}"
+          arguments[name.to_sym].handler
         end
+      end
+
+      def handler
+        @value ||= @default unless @default.nil?
+        raise "arg '#{@name}' is required, but not set" if @required && @value.nil?
+        if @convert.nil?
+          if block_given?
+            @value = yield @value
+          end
+        else
+          if @convert == :boolean
+            @value = boolean(@value)
+          else
+            @value = @value.send(@convert)
+          end
+        end
+        raise "arg '#{name}' is required, but not set (after convert)" if @required && @value.nil?
       end
 
       def boolean(value)
