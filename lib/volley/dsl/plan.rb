@@ -50,7 +50,6 @@ module Volley
         Volley::Log.debug "## #{@project.name} : #@name"
         @origargs = options[:rawargs]
         process_arguments(options[:rawargs])
-        #instance_eval &@block
         run_actions
         [args.branch, args.version].join(":")
       end
@@ -85,24 +84,6 @@ module Volley
         @stage_order.each do |stage|
           @stages[stage].call
         end
-        #stages = [*stages].flatten
-        #stages = [:pre, :main, :post] if stages.count == 0
-        #stages.each do |stage|
-        #  if @actions[stage].count > 0
-        #    @actions[stage].each do |act|
-        #      Volley::Log.debug ".. #{@project.name}[#{stage}]:#{act[:name].to_s.split("-").join(" ")}"
-        #      begin
-        #        Volley::Log.debug ".. .. before"
-        #        self.instance_eval(&act[:block])
-        #        Volley::Log.debug ".. .. after"
-        #      rescue => e
-        #        Volley::Log.error "error running action: #{act[:name]}: #{e.message} at #{e.backtrace.first}"
-        #        Volley::Log.debug e
-        #        raise e
-        #      end
-        #    end
-        #  end
-        #end
       end
 
       def method_missing(n, *args)
@@ -216,7 +197,6 @@ module Volley
           kvs = raw.select { |e| e =~ /\:/ }
           raw = raw.reject { |e| e =~ /\:/ }
           @rawargs = raw
-          #@argdata = kvs.inject({ }) { |h, a| (k, v) = a.split(/:/); h[k.to_sym]= v; h }
           kvs.each do |a|
             (k, v) = a.split(/:/)
             if @arguments[k.to_sym]
@@ -225,7 +205,6 @@ module Volley
             end
           end
         end
-        #@args = OpenStruct.new(@arguments.inject({ }) { |h, e| (k, v)=e; h[k] = v.value; h })
       end
     end
   end
