@@ -28,7 +28,15 @@ describe Volley::Dsl::Plan do
       #nothing
     end
     expect(@plan.stages.count).to eq(3)
-    expect(@plan.stages[:main].count).to eq(1)
+    expect(@plan.stages[:main].actions.count).to eq(1)
+  end
+
+  it "should be able to define an action in another stage" do
+    @plan.action :second, :post do
+      expect(@plan.stages.count).to eq(3)
+      expect(@plan.stages[:main].actions.count).to eq(1)
+      expect(@plan.stages[:post].actions.count).to eq(1)
+    end
   end
 
   it "should be able to access source" do

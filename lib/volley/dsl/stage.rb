@@ -2,6 +2,7 @@
 module Volley
   module Dsl
     class Stage
+      attr_reader :actions
       def initialize(name, options={}, &block)
         @name = name.to_sym
         @plan = options.delete(:plan)
