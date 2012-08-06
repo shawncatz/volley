@@ -61,20 +61,20 @@ module Volley
       Volley::Log.console_debug if debug
       Volley.config.debug = debug
 
-      plan = argv.shift
-      desc = argv.shift
-
       kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
       pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
 
+      plan = pos.shift
+      desc = pos.shift
+
       raise "must specify plan" unless plan
-      raise "must specify descriptor" unless desc
 
       if Volley::Dsl.project(:volley).plan?(plan)
         # the plan is reserved
         plan = "volley:#{plan}"
       else
         # the plan isn't reserved
+        raise "must specify descriptor" unless desc
         (project, branch, version) = Volley::Descriptor.new(desc).get
         plan = "#{project}:#{plan}"
       end

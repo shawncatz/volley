@@ -45,10 +45,19 @@ module Volley
       end
 
       def versions(pr,br)
-        files[:desc][pr][br].keys
+        files[:desc][pr][br].keys.map do |e|
+          e == 'latest' ? "latest => #{files[:latest]["#{pr}/#{br}"]}" : e
+        end
         #raise "not implemented"
       rescue => e
         Volley::Log.warn "error getting version list from publisher: #{e.message}"
+        []
+      end
+
+      def contents(pr, br, vr)
+        files[:desc][pr][br][vr]
+      rescue => e
+        Volley::Log.warn "error getting contents list from publisher: #{e.message}"
         []
       end
 

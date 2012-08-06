@@ -24,6 +24,10 @@ module Volley
         raise "not implemented"
       end
 
+      def contents(project, branch, version)
+        raise "not implemented"
+      end
+
       def volleyfile(desc={ })
         @project = desc[:project]
         @branch  = desc[:branch]

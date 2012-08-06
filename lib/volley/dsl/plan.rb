@@ -98,7 +98,7 @@ module Volley
       def version
         v = args.descriptor ? args.descriptor.version : nil
         if v == "latest"
-          v = source.version || nil
+          v = source.revision || nil
         end
         v
       end
@@ -198,11 +198,11 @@ module Volley
       def process_arguments(raw)
         Volley::Log.debug ".. process arguments: #{raw.inspect}"
         if raw
-          kvs   = raw.select { |e| e =~ /\:/ }
-          raw   = raw.reject { |e| e =~ /\:/ }
+          kvs   = raw.select { |e| e =~ /\=/ }
+          raw   = raw.reject { |e| e =~ /\=/ }
           @argv = raw
           kvs.each do |a|
-            (k, v) = a.split(/:/)
+            (k, v) = a.split(/\=/)
             if @arguments[k.to_sym]
               Volley::Log.debug ".. .. setting argument: #{k} = #{v}"
               @arguments[k.to_sym].value = v
