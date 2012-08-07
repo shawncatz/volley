@@ -13,7 +13,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "volley"
   gem.require_paths = ["lib"]
-  gem.version       = "#{Volley::Version::STRING}.alpha7"
+  gem.version       = "#{Volley::Version::STRING}.alpha8"
 
   gem.add_dependency "clamp"
   gem.add_dependency "fog"
