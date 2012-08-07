@@ -10,6 +10,7 @@ module Volley
         @encrypted = optional(:encrypted, false)
         @local     = optional(:local, Volley.config.directory)
         @loglevel  = @debug ? :info : :debug
+        @latest    = {}
 
         load_configuration
       end
@@ -39,12 +40,12 @@ module Volley
       end
 
       def latest(project, branch)
-        v = pull_file(dir(project,branch), "latest")
-        "#{project}/#{branch}/#{v}"
+        @latest["#{project}/#{branch}"] ||= pull_file(dir(project,branch), "latest")
       end
 
       def volleyfile(project, branch, version="latest")
-        contents = pull_file(dir(project,branch,version), "Volleyfile")
+        d = dir(project,branch,version)
+        contents = pull_file(d, "Volleyfile")
 
         dest     = "#{@options[:local]}/Volleyfile-#{Time.now.to_i}-#{$$}"
         raise "File #{dest} already exists" if File.exists?(dest)
@@ -69,7 +70,7 @@ module Volley
           push_file(dir, "Volleyfile", File.open(Volley.config.volleyfile))
         end
 
-        push_file(dir(project, branch), "latest", version)
+        push_file(dir(project, branch), "latest", "#{project}/#{branch}/#{version}")
 
         true
       end
@@ -123,12 +124,12 @@ module Volley
       end
 
       def remote_file(branch, version)
-        version = version == 'latest' ? get_latest(project, branch) : version
+        version = version == 'latest' ? latest(project, branch) : version
         "#{branch}-#{version}.tgz#{".cpt" if @encrypted}"
       end
 
       def dir(project, branch, version=nil)
-        version = version == 'latest' ? get_latest(project, branch) : version
+        version = version == 'latest' ? latest(project, branch).split("/").last : version
         [project, branch, version].compact.join("/")
       end
 
