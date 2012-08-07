@@ -4,7 +4,6 @@ module Volley
 
       def projects
         l = Dir["#@directory/*"]
-        puts "projects: #{l.inspect}"
         l.map {|e| e.gsub(/#@directory\//,"")}
       end
 
@@ -13,12 +12,13 @@ module Volley
       end
 
       def versions(pr, br)
-        Dir["#@directory/#{pr}/#{br}/*"].map {|e| e.gsub(/#@directory\/#{pr}\/#{br}\//,"")}
+        Dir["#@directory/#{pr}/#{br}/*"].map do |e|
+          e.gsub(/#@directory\/#{pr}\/#{br}\//,"")
+        end
       end
 
       def exists?(project, branch, version)
         d = "#@directory/#{project}/#{branch}/#{version}"
-        Volley::Log.debug "exists? #{d}"
         File.directory?(d)
       end
 
@@ -48,7 +48,6 @@ module Volley
       def push_file(dir, file, content = nil)
         file = File.basename(file) if file =~ /^\//
         dest = "#@directory/#{dir}/#{file}"
-        log "-> #{file}"
         FileUtils.mkdir_p(File.dirname(dest))
         content = content.read if content.is_a?(File)
         if content
@@ -57,11 +56,12 @@ module Volley
           FileUtils.copy(file, dest)
         end
         log "=> #{dest}"
+        dest
       end
 
       def pull_file(dir, file, localdir=nil)
         remote = "#@directory/#{dir}"
-        log "<- #{dir}/#{file}"
+        raise ArtifactMissing, "missing: #{remote}" unless File.exists?("#{remote}/#{file}")
         if localdir
           FileUtils.mkdir_p(localdir)
           log "<= #@local/#{dir}/#{file}"

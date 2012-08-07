@@ -58,11 +58,10 @@ module Volley
         raise ArtifactExists, "the artifact already exists" if exists?(project, branch, version)
 
         localfiles = [*localfiles].flatten
-        log ".. pushing..."
+        log "^^ #{me}#push"
 
         dir = dir(project, branch, version)
         localfiles.each do |localfile|
-          log ".. .. #{localfile}"
           push_file(dir, localfile, File.open(localfile))
         end
 
@@ -88,19 +87,6 @@ module Volley
 
       protected
 
-      def push_file(dir, name, contents)
-        raise "not implemented"
-      end
-
-      def pull_file(dir, name, localdir=nil)
-        raise "not implemented"
-      end
-
-      def remote_file(branch, version)
-        version = version == 'latest' ? get_latest(project, branch) : version
-        "#{branch}-#{version}.tgz#{".cpt" if @encrypted}"
-      end
-
       def me
         self.class.name.split("::").last
       end
@@ -125,6 +111,21 @@ module Volley
       def get_config(name)
         n = name.to_sym
         Volley.config.send(n)
+      end
+
+
+
+      def push_file(dir, name, contents)
+        raise "not implemented"
+      end
+
+      def pull_file(dir, name, localdir=nil)
+        raise "not implemented"
+      end
+
+      def remote_file(branch, version)
+        version = version == 'latest' ? get_latest(project, branch) : version
+        "#{branch}-#{version}.tgz#{".cpt" if @encrypted}"
       end
 
       def dir(project, branch, version=nil)

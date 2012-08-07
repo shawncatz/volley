@@ -28,6 +28,10 @@ shared_examples_for Volley::Publisher::Base do
     expect(@pub.pull("spec", "trunk", "1")).to eq("#{root}/test/publisher/local/spec/trunk/1/trunk-1.tgz")
   end
 
+  it "should fail to retrieve a missing artifact" do
+    expect{ @pub.pull("spec", "trunk", "15")}.to raise_error(Volley::Publisher::ArtifactMissing)
+  end
+
   it "should be able to tell me the list of projects" do
     expect(@pub.projects).to match_array(%w{spec})
   end
@@ -75,13 +79,13 @@ describe Volley::Publisher::Local do
   end
 end
 
-#describe Volley::Publisher::Amazons3 do
-#  it_behaves_like Volley::Publisher::Base
-#
-#  before(:each) do
-#    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
-#                                           :aws_secret_access_key => "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",
-#                                           :bucket => "inqcloud-volley-test",
-#                                           :local => "#{root}/test/publisher/local")
-#  end
-#end
+describe Volley::Publisher::Amazons3 do
+  it_behaves_like Volley::Publisher::Base
+
+  before(:each) do
+    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
+                                           :aws_secret_access_key => "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",
+                                           :bucket => "inqcloud-volley-test",
+                                           :local => "#{root}/test/publisher/local")
+  end
+end

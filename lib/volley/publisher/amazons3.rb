@@ -19,17 +19,15 @@ module Volley
         []
       end
 
-      def versions(pr,br)
-        files[:desc][pr][br].keys.map do |e|
-          e == 'latest' ? "latest => #{files[:latest]["#{pr}/#{br}"]}" : e
-        end
+      def versions(pr, br)
+        files[:desc][pr][br].keys
       rescue => e
         Volley::Log.warn "error getting version list from publisher: #{e.message}"
         []
       end
 
       def contents(pr, br, vr)
-        files[:desc][pr][br][vr]
+        files[:desc][pr][br][vr].map {|e| e.gsub("#{pr}/#{br}/#{vr}/","")}
       rescue => e
         Volley::Log.warn "error getting contents list from publisher: #{e.message}"
         []
@@ -62,36 +60,34 @@ module Volley
         connect
       end
 
-      def push_file(name, dir, contents)
-        Volley::Log.debug ".. #{name}"
-        file = File.basename(name)
-        path = "#{dir}/#{file}"
-        #Volley::Log.info "-> s3:#@bucket/#{path}"
-        @dir        ||= @connection.directories.create({ :key => @bucket })
-        s3f         = @dir.files.create(
-            :key    => "#{path}",
-            :body   => contents,
-            :public => true
-        )
-        Volley::Log.info "=> #{s3f.public_url.gsub("%2F", "/")}"
-        "#{path}"
+      def push_file(dir, file, contents)
+        file = File.basename(file)
+        dest = "#{dir}/#{file}"
+        #log "-> #@bucket/#{path}"
+        f = root.files.create(:key => dest, :body => contents, :public => true)
+        log "=> #{f.public_url.gsub("%2F", "/")}"
+        dest
       end
 
-      def pull_file(name, dir, ldir=nil)
-        #Volley::Log.info "<- s3:#@bucket/#{dir}/#{name}"
-        if ldir
-          FileUtils.mkdir_p(ldir)
-        end
-        f           = @connection.directories.get(@bucket).files.get("#{dir}/#{name}")
-        raise "could not load file: #{dir}/#{name}" unless f
-        contents    = f.body
-        if ldir
-          lfile = "#{ldir}/#{name}"
-          File.open(lfile, "w") { |lf| lf.write(contents) }
-          Volley::Log.info "<= #{lfile}"
+      def pull_file(dir, file, localdir=nil)
+        remote = "#{dir}/#{file}"
+        f = root.files.get(remote)
+        raise ArtifactMissing, "missing: #{remote}" unless f
+
+        contents = f.body
+
+        if localdir
+          FileUtils.mkdir_p(localdir)
+          local = "#{localdir}/#{file}"
+          log "<= #{local}"
+          File.open(local, "w") { |lf| lf.write(contents) }
         else
           contents
         end
+      end
+
+      def root
+        @root ||= @connection.directories.create({ :key => @bucket })
       end
 
       def connect
