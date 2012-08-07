@@ -1,3 +1,4 @@
+require "volley/action"
 
 module Volley
   module Dsl
