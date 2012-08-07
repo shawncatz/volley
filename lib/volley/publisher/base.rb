@@ -123,12 +123,12 @@ module Volley
       end
 
       def remote_file(branch, version)
-        version = version == 'latest' ? get_latest(project, branch) : version
+        version = version == 'latest' ? latest(project, branch) : version
         "#{branch}-#{version}.tgz#{".cpt" if @encrypted}"
       end
 
       def dir(project, branch, version=nil)
-        version = version == 'latest' ? get_latest(project, branch) : version
+        version = version == 'latest' ? latest(project, branch) : version
         [project, branch, version].compact.join("/")
       end
 

@@ -35,18 +35,14 @@ module Volley
       desc    = opts[:descriptor]
       second  = opts[:second]
 
-      project = nil
-      branch  = nil
-      version = nil
-
-      (project, plan) = plan.split(/:/) if plan =~ /\:/
-      (project, branch, version) = Volley::Descriptor.new(desc).get unless project
+      (runpr, plan) = plan.split(/:/) if plan =~ /\:/
+      (project, branch, version) = Volley::Descriptor.new(desc).get rescue [nil,nil,nil]
+      runpr ||= project
 
       begin
-        Volley::Log.debug "PROCESS plan:#{plan} descriptor:#{desc} args:#{args}"
-        if Volley::Dsl.project?(project)
+        if Volley::Dsl.project?(runpr)
           # we have the project locally
-          pr = Volley::Dsl.project(project)
+          pr = Volley::Dsl.project(runpr)
           if pr.plan?(plan)
             # plan is defined
             pl = pr.plan(plan)
@@ -57,6 +53,7 @@ module Volley
               Volley.meta[project] = data
             end
             Volley.meta.save
+            Volley::Log.debug "== #{runpr} = #{data}"
           else
             # plan is not defined
             raise "could not find plan #{plan} in project #{project}"
@@ -70,7 +67,7 @@ module Volley
               vf = pub.volleyfile(project, branch, version)
               Volley::Log.debug "downloaded volleyfile: #{vf}"
               Volley::Dsl::VolleyFile.load(vf)
-              process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args, :second => true)
+              process(:plan => plan, :desc => desc, :args => args, :second => true)
             else
               raise "project #{project} does not exist in configured publisher #{pub.class}"
             end
