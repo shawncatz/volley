@@ -1,0 +1,18 @@
+project :test do
+  plan :publish do
+    action :build do
+      FileUtils.rm_f("file")
+      ver = "#{project.name}/#{branch}/#{version}"
+      File.open("file", "w") {|f| f.write(ver)}
+    end
+    push do
+      ["file"]
+    end
+  end
+
+  plan :deploy do
+    pull do |dir|
+      File.read("#{dir}/file")
+    end
+  end
+end

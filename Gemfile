@@ -4,4 +4,7 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'rake'
-gem 'templar'
+gem 'cucumber'
+gem 'rspec'
+
+gem 'awesome_print'

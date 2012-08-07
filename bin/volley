@@ -1,55 +1,103 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
+require 'docopt'
 require 'volley'
-require 'clamp'
+require 'awesome_print'
 
-Volley::VolleyFile.init
-STDOUT.sync = true
+DOC = <<-DOC
+Usage: volley [options] <plan> <descriptor> [argument]...
+
+<plan>
+  The plan to run.
+  reserved plan names: [versions, latest, list]
+
+<descriptor>
+  A descriptor should conform to the following format:
+    <project>[@<branch>[:<version>]]
+
+  project:  the project name.
+  branch:   the branch name.
+            Defaults to the branch currently in use,
+            must be specified for remote mode.
+  version:  the version (revision)
+            Defaults to the current revision
+            In remote mode, defaults to "latest"
+
+<argument>
+  A list of key=value pairs
+
+Options:
+  -h --help           show this help message and exit
+     --version        show version and exit
+  -d --debug          show debug output, change log level to debug
+  -c --config FILE    load additional Volleyfile [default: ~/.Volleyfile]
+  -p --primary FILE   load primary Volleyfile [default: ./Volleyfile]
+
+  -f --fork           fork process into background and exit
+  -l --log LOG        log file [default: /opt/volley/volley.log]
+  -L --level LEVEL    log level [default: debug]
+DOC
 
 module Volley
-  class Command < Clamp::Command
-    option %w{-c --config}, "CONFIG", "configuration file", :default => "~/.Volleyfile"
-    option %w{-p --primary}, "PRIMARY", "primary configuration file", :default => "./Volleyfile"
-    option %w{-d --debug}, :flag, "set debug flag"
-    option %w{-f --fork}, :flag, "fork process into background"
+  class Command
+    def initialize
+    end
 
-    parameter "DESCRIPTOR", "volley descriptor, follows the format: project:plan[@branch[:version]]"
-    parameter "[ARG] ...", "additional arguments passed to plan of the form: key:value"
+    def run(argv)
+      STDOUT.sync = true
+      options     = Docopt(DOC, Volley::Version::STRING)
+      debug       = options[:debug]
+      config      = options[:config]
+      primary     = options[:primary]
+      fork        = options[:fork]
+      log         = options[:log]
+      level       = options[:level]
 
-    def execute
-      Volley::VolleyFile.load(config, :optional => true)
-      Volley::VolleyFile.load(primary, :primary => true) if File.file?(primary)
-      Volley.config.debug = debug?
+      Volley::Dsl::VolleyFile.init
+      Volley::Dsl::VolleyFile.load(config, :optional => true)
+      Volley::Dsl::VolleyFile.load(primary, :primary => true) if File.file?(primary)
+      Volley::Log.add(level.to_sym, log)
+      Volley::Log.console_debug if debug
+      Volley.config.debug = debug
 
-      (project, plan, branch, version) = descriptor.split(/[:\@]/)
-      project = "volley" if project.nil? || project.blank?
+      kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
+      pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
 
-      args = arg_list
-      args << "branch:#{branch}" if branch
-      args << "version:#{version}" if version
+      plan = pos.shift
+      desc = pos.shift
 
-      if debug?
-        puts "project:   #{project}"
-        puts "plan:      #{plan}"
-        puts "branch:    #{branch}"
-        puts "version:   #{version}"
-        puts "args_list: #{args.join(",")}"
+      raise "must specify plan" unless plan
+
+      if Volley::Dsl.project(:volley).plan?(plan)
+        # the plan is reserved
+        plan = "volley:#{plan}"
+      else
+        # the plan isn't reserved
+        raise "must specify descriptor" unless desc
+        (project, branch, version) = Volley::Descriptor.new(desc).get
+        plan = "#{project}:#{plan}"
       end
 
-      #raise "you must specify project (#{project}): [#{Volley::Dsl.projects.keys.join(',')}]" unless project && Volley::Dsl.project(project)
-      #raise "you must specify plan: #{project} [#{Volley::Dsl::Project.project(project).plans.keys.join(", ")}]" unless plan && Volley::Dsl::Project.project(project).plan(plan)
+      if debug
+        Volley::Log.debug "## OPTIONS ##"
+        Volley::Log.debug "plan:       #{plan}"
+        Volley::Log.debug "descriptor: #{desc}"
+        Volley::Log.debug "positional: #{pos.join(",")}"
+        Volley::Log.debug "key:value:  #{kvs.join(",")}"
+      end
 
-      Volley.process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args)
-    rescue Interrupt => e
-      Volley::Log.warn "Cancelled..."
+      Volley::Log.info "processing '#{plan}' plan for '#{desc}'"
+      Volley.process(:plan => plan, :descriptor => desc, :args => kvs)
     rescue => e
-      Volley::Log.error "error: #{e.message}"
-      Volley::Log.error e if debug?
-      Volley::Log.debug e
-      raise Clamp::HelpWanted, self
+      Volley::Log.error "exception: #{e.message} at #{e.backtrace.first}"
+      if debug
+        Volley::Log.error e
+      else
+        Volley::Log.debug e
+      end
     end
   end
 end
 
-Volley::Command.run
+Volley::Command.new.run(ARGV)

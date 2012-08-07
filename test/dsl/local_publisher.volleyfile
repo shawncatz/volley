@@ -1,0 +1,4 @@
+
+publisher :local,
+  :directory => "#{Dir.pwd}/test/publisher/remote",
+  :local => "#{Dir.pwd}/test/publisher/local"

@@ -8,7 +8,7 @@ module Volley
           n = name.to_sym
           @projects ||= {}
           if @projects[n]
-            #raise "defining project #{name} more than once"
+            raise "defining project #{name} more than once"
           else
             @projects[n] = new(n)
             @projects[n].instance_eval &block if block_given?
@@ -28,6 +28,10 @@ module Volley
           n = name.to_sym
           @projects.keys.include?(n)
         end
+
+        def unload
+          @projects = nil
+        end
       end
 
       attr_reader :plans
@@ -40,7 +44,11 @@ module Volley
       end
 
       def config
-        @config ||= OpenStruct.new
+        Volley.config
+      end
+
+      def log(msg)
+        Volley::Log.info msg
       end
 
       def plan(name, o={}, &block)

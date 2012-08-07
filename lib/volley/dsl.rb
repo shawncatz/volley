@@ -11,11 +11,18 @@ module Volley
         Volley::Dsl::Publisher.get
       end
 
+      def file(name)
+        return false unless name
+        Volley::Dsl::VolleyFile.load(name)
+      end
+
       def project(name)
+        return false unless name
         Volley::Dsl::Project.get(name)
       end
 
       def project?(name)
+        return false unless name
         Volley::Dsl::Project.exists?(name)
       end
 

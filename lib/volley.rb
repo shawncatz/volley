@@ -3,34 +3,59 @@ require "ostruct"
 require "active_support/all"
 
 require "volley/version"
-require "volley/config"
 require "volley/log"
-require "volley/volley_file"
 require "volley/publisher/base"
+require "volley/publisher/exceptions"
+require "volley/descriptor"
+require "volley/meta"
 
 require "volley/dsl"
 
 module Volley
   class << self
+    def config
+      @config ||= OpenStruct.new({:directory => "/opt/volley"})
+    end
+
+    def meta
+      @meta ||= Volley::Meta.new
+    end
+
+    def unload
+      Volley::Log.debug "Unload"
+      @config = nil
+      @meta = nil
+      Volley::Dsl::VolleyFile.unload
+      Volley::Dsl::Project.unload
+    end
+
     def process(opts)
-      project = opts[:project]
+      project = nil
       plan    = opts[:plan]
-      branch  = opts[:branch]
-      version = opts[:version]
-      args    = opts[:args]
+      args    = opts[:args] || []
+      desc    = opts[:descriptor]
       second  = opts[:second]
 
+      (project, plan) = plan.split(/:/) if plan =~ /\:/
+      (project, _, _) = Volley::Descriptor.new(desc).get unless project
+
       begin
-        Volley::Log.debug "PROCESS project:#{project} plan:#{plan} branch:#{branch} version:#{version} args:#{args}"
+        Volley::Log.debug "PROCESS plan:#{plan} descriptor:#{desc} args:#{args}"
         if Volley::Dsl.project?(project)
           # we have the project locally
           pr = Volley::Dsl.project(project)
           if pr.plan?(plan)
             # plan is defined
             pl = pr.plan(plan)
-            args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
-            args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
-            pl.call(:rawargs => args)
+            #args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
+            #args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
+            args << "descriptor=#{desc}"
+            data = pl.call(:args => args)
+
+            if plan == "deploy"
+              Volley.meta[project] = data
+            end
+            Volley.meta.save
           else
             # plan is not defined
             raise "could not find plan #{plan} in project #{project}"
@@ -43,7 +68,7 @@ module Volley
             if pub.projects.include?(project)
               vf = pub.volleyfile(opts)
               Volley::Log.debug "downloaded volleyfile: #{vf}"
-              Volley::VolleyFile.load(vf)
+              Volley::Dsl::VolleyFile.load(vf)
               process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args, :second => true)
             else
               raise "project #{project} does not exist in configured publisher #{pub.class}"
@@ -55,10 +80,11 @@ module Volley
       rescue => e
         Volley::Log.error "error while processing: #{e.message}"
         Volley::Log.debug e
+        raise e
       end
 
       #if Volley.config.debug
-      #  ap Volley::Dsl::Project.projects
+      #  ap Volley::Dsl::Project.project
       #end
     end
   end

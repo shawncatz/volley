@@ -1,13 +1,14 @@
 project :volley do
-  plan :init do
+  scm :base
+  plan :init, :remote => false do
     default do
-      file = File.expand_path("../init/Volleyfile", __FILE__)
+      file = File.expand_path("../../init/Volleyfile", __FILE__)
       dest = "#{Dir.pwd}/Volleyfile"
       FileUtils.copy(file, dest)
       puts "created: #{dest}"
     end
   end
-  plan :list do
+  plan :list, :remote => false do
     default do
       Volley::Dsl::Project.projects.each do |p, project|
         Volley::Log.info "project: #{p}"
@@ -18,40 +19,24 @@ project :volley do
     end
   end
   plan :latest do
-    argument :project #, :required => true
-    argument :branch #, :required => true
     default do
-      project = args.project
-      branch  = args.branch
-
-      if project.nil? && rawargs
-        first = rawargs.first
-        (p, b) = first.split(/\//) if first
-        if p
-          project = p
-          branch  = b
-        end
-      end
+      ap args
+      (project,branch,version) = args.descriptor.get
       raise "project and branch must be specified" unless project && branch
 
       pub = Volley::Dsl.publisher
       puts pub.latest(project, branch)
     end
   end
-  plan :versions do
-    argument :project
-    argument :branch
-    argument :version
+  plan :versions, :remote => false do
     argument :all, :convert => :boolean, :default => false
     argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
 
     default do
-      project = args.project
-      branch  = args.branch
-      version = args.version
+      (project, branch, version) = args.descriptor.get
 
-      if project.nil? && rawargs
-        first = rawargs.first
+      if project.nil? && argv.count
+        first = argv.first
         (p, b, v) = first.split(/\//) if first
         if p
           project = p
@@ -68,7 +53,7 @@ project :volley do
       else
         if project
           if branch
-            if version
+            if version != "latest"
               data = pub.contents(project, branch, version)
             else
               data = pub.versions(project, branch)
@@ -92,11 +77,9 @@ project :volley do
     end
   end
   plan :remote do
-    argument :version, :required => true
-
     default do
       pub = Volley::Dsl.publisher
-      (pr, br, vr) = args.version.split(/[\:\/\.]/)
+      (pr, br, vr) = args.descriptor.get
       vr ||= 'latest'
       vf = pub.volleyfile(:project => pr, :branch => br, :version => vr)
       load vf
