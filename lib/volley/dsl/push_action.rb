@@ -1,4 +1,4 @@
-require "volley/action"
+require "volley/dsl/action"
 
 module Volley
   module Dsl
