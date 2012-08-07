@@ -39,6 +39,11 @@ module Volley
           raise "failed to unpack: #{dir}/unpack" unless dir && File.directory?("#{dir}/unpack")
           yield "#{dir}/unpack"
         end
+
+        @plan.action :meta do
+          Volley.meta[project.name] = "#{args.descriptor.branch}:#{args.descriptor.version}"
+          Volley.meta.save
+        end
       end
     end
   end

@@ -3,7 +3,6 @@ require "ostruct"
 require "active_support/all"
 
 require "volley/version"
-require "volley/config"
 require "volley/log"
 require "volley/publisher/base"
 require "volley/publisher/exceptions"
@@ -14,6 +13,22 @@ require "volley/dsl"
 
 module Volley
   class << self
+    def config
+      @config ||= OpenStruct.new({:directory => "/opt/volley"})
+    end
+
+    def meta
+      @meta ||= Volley::Meta.new
+    end
+
+    def unload
+      Volley::Log.debug "Unload"
+      @config = nil
+      @meta = nil
+      Volley::Dsl::VolleyFile.unload
+      Volley::Dsl::Project.unload
+    end
+
     def process(opts)
       project = nil
       plan    = opts[:plan]

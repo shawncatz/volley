@@ -78,8 +78,7 @@ module Volley
         dir = dir(project, branch, version)
         file = remote_file(branch, version)
 
-        log "dir: #{dir}"
-        log "file: #{file}"
+        log "vv #{me}#pull"
         pull_file(dir, file, "#@local/#{dir}")
 
         "#@local/#{dir}/#{file}"

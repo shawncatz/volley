@@ -8,12 +8,16 @@ Volley::Log.console_disable
 
 shared_examples_for Volley::Publisher::Base do
   before(:all) do
-    FileUtils.mkdir_p("#{root}/test/publisher/remote")
-    FileUtils.mkdir_p("#{root}/test/publisher/local")
+    @remote = "#{root}/test/publisher/remote"
+    @local  = "#{root}/test/publisher/local"
+    FileUtils.mkdir_p(@remote)
+    FileUtils.mkdir_p(@local)
+    [@local, @remote].each { |d| %x{rm -rf #{d}/*} }
   end
 
   after(:all) do
-    FileUtils.rm_rf("#{root}/test/publisher")
+    FileUtils.rm_rf(@remote)
+    FileUtils.rm_rf(@local)
   end
 
   it "should be able to publish artifacts" do
@@ -25,7 +29,7 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should be able to retrieve an artifact" do
-    expect(@pub.pull("spec", "trunk", "1")).to eq("#{root}/test/publisher/local/spec/trunk/1/trunk-1.tgz")
+    expect(@pub.pull("spec", "trunk", "1")).to eq("#@local/spec/trunk/1/trunk-1.tgz")
   end
 
   it "should fail to retrieve a missing artifact" do
@@ -52,7 +56,7 @@ shared_examples_for Volley::Publisher::Base do
     Dir.chdir("#{root}/test/project")
     expect(@pub.push("spec","trunk","3","Volleyfile")).to eq(true)
     Dir.chdir(root)
-    expect(@pub.volleyfile("spec","trunk","3")).to match(/local\/Volleyfile-.*-.*/)
+    expect(@pub.volleyfile("spec","trunk","3")).to match(/#@local\/Volleyfile-.*-.*/)
   end
 
   it "should be able to tell me the latest of a project and branch" do
@@ -70,12 +74,9 @@ end
 
 describe Volley::Publisher::Local do
   it_behaves_like Volley::Publisher::Base
-  remote = "#{root}/test/publisher/remote"
-  local  = "#{root}/test/publisher/local"
-  [local, remote].each { |d| %x{rm -rf #{d}/*} }
 
   before(:each) do
-    @pub = Volley::Publisher::Local.new(:directory => remote, :local => local)
+    @pub = Volley::Publisher::Local.new(:directory => @remote, :local => @local)
   end
 end
 
@@ -86,6 +87,6 @@ describe Volley::Publisher::Amazons3 do
     @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
                                            :aws_secret_access_key => "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",
                                            :bucket => "inqcloud-volley-test",
-                                           :local => "#{root}/test/publisher/local")
+                                           :local => @local)
   end
 end
