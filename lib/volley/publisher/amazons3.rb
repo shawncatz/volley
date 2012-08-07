@@ -109,7 +109,7 @@ module Volley
           hash[:all] ||= {}
           hash[:latest] ||= {}
           v = "#{pr}/#{br}/#{vr}"
-          hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
+          #hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
           hash[:all][v] = hash["latest"] == v
         end
         #ap hash
