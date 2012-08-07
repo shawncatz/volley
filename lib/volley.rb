@@ -30,14 +30,17 @@ module Volley
     end
 
     def process(opts)
-      project = nil
       plan    = opts[:plan]
       args    = opts[:args] || []
       desc    = opts[:descriptor]
       second  = opts[:second]
 
+      project = nil
+      branch  = nil
+      version = nil
+
       (project, plan) = plan.split(/:/) if plan =~ /\:/
-      (project, _, _) = Volley::Descriptor.new(desc).get unless project
+      (project, branch, version) = Volley::Descriptor.new(desc).get unless project
 
       begin
         Volley::Log.debug "PROCESS plan:#{plan} descriptor:#{desc} args:#{args}"
@@ -47,8 +50,6 @@ module Volley
           if pr.plan?(plan)
             # plan is defined
             pl = pr.plan(plan)
-            #args << "branch:#{branch}" if branch && args.select{|e| e =~ /^branch\:/}.count == 0
-            #args << "version:#{version}" if version && args.select{|e| e =~ /^version\:/}.count == 0
             args << "descriptor=#{desc}"
             data = pl.call(:args => args)
 
@@ -65,8 +66,8 @@ module Volley
           # we dont have the project locally, search the publisher
           pub = Volley::Dsl.publisher
           if pub
-            if pub.projects.include?(project)
-              vf = pub.volleyfile(opts)
+            if pub.projects.include?(project) && branch
+              vf = pub.volleyfile(project, branch, version)
               Volley::Log.debug "downloaded volleyfile: #{vf}"
               Volley::Dsl::VolleyFile.load(vf)
               process(:project => project, :plan => plan, :branch => branch, :version => version, :args => args, :second => true)
@@ -82,10 +83,6 @@ module Volley
         Volley::Log.debug e
         raise e
       end
-
-      #if Volley.config.debug
-      #  ap Volley::Dsl::Project.project
-      #end
     end
   end
 end
