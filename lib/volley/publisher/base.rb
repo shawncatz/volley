@@ -5,6 +5,12 @@ module Volley
         @options = {
             :overwrite => false,
         }.merge(options)
+
+        @debug     = optional(:debug, false)
+        @encrypted = optional(:encrypted, false)
+        @local     = optional(:local, Volley.config.directory)
+        @loglevel  = @debug ? :info : :debug
+
         load_configuration
       end
 
@@ -28,77 +34,80 @@ module Volley
         raise "not implemented"
       end
 
-      def volleyfile(desc={ })
-        @project = desc[:project]
-        @branch  = desc[:branch]
-        @version = desc[:version] && desc[:version] != 'latest' ? desc[:version] : get_latest(@project, @branch)
-        contents = pull_file("Volleyfile", version)
-        dest     = @options[:destination] || "/tmp/Volleyfile-#{Time.now.to_i}-#{$$}"
+      def delete_project(project)
+        raise "not implemented"
+      end
+
+      def latest(project, branch)
+        v = pull_file(dir(project,branch), "latest")
+        "#{project}/#{branch}/#{v}"
+      end
+
+      def volleyfile(project, branch, version="latest")
+        contents = pull_file(dir(project,branch,version), "Volleyfile")
+
+        dest     = "#{@options[:local]}/Volleyfile-#{Time.now.to_i}-#{$$}"
         raise "File #{dest} already exists" if File.exists?(dest)
-        Volley::Log.debug("saving Volleyfile: #{dest}")
+
+        log "saving Volleyfile: #{dest}"
         File.open(dest, "w") { |f| f.write(contents) }
         dest
       end
 
-      def push(project, br, ver, localfiles)
-        raise ArtifactExists, "the artifact already exists" if exists?(project, br, ver)
-
-        @project = project
-        @branch  = br
-        @version = ver
+      def push(project, branch, version, localfiles)
+        raise ArtifactExists, "the artifact already exists" if exists?(project, branch, version)
 
         localfiles = [*localfiles].flatten
-        Volley::Log.info ".. pushing:" if @debug
+        log ".. pushing..."
 
+        dir = dir(project, branch, version)
         localfiles.each do |localfile|
-          Volley::Log.info ".. .. #{localfile}" if @debug
-          push_file(localfile, version, File.open(localfile))
+          log ".. .. #{localfile}"
+          push_file(dir, localfile, File.open(localfile))
         end
-        push_file("latest", branch, version)
-        push_file("Volleyfile", version, File.open(Volley.config.volleyfile)) if Volley.config.volleyfile && File.file?(Volley.config.volleyfile)
+
+        if Volley.config.volleyfile && File.file?(Volley.config.volleyfile)
+          push_file(dir, "Volleyfile", File.open(Volley.config.volleyfile))
+        end
+
+        push_file(dir(project, branch), "latest", version)
 
         true
       end
 
-      def pull(project, branch, ver="latest")
-        @project = project
-        @branch  = branch
-        @version = ver
+      def pull(project, branch, version="latest")
+        dir = dir(project, branch, version)
+        file = remote_file(branch, version)
 
-        if @version == "latest"
-          @version = get_latest(@project, @branch)
-        end
+        log "dir: #{dir}"
+        log "file: #{file}"
+        pull_file(dir, file, "#@local/#{dir}")
 
-        Volley::Log.info "remote: #{version}" if @debug
-        Volley::Log.info "remote_file: #{remote_file}" if @debug
-        pull_file(remote_file, version, "#@local/#{version}")
-
-        "#@local/#{version}/#{remote_file}"
+        "#@local/#{dir}/#{file}"
       end
 
-      def latest(project, branch)
-        pull_file("latest", "#{project}/#{branch}")
-        #(p, n, v) = cur.split(/\//)
-        #v
+      protected
+
+      def push_file(dir, name, contents)
+        raise "not implemented"
       end
 
-      private
+      def pull_file(dir, name, localdir=nil)
+        raise "not implemented"
+      end
+
+      def remote_file(branch, version)
+        version = version == 'latest' ? get_latest(project, branch) : version
+        "#{branch}-#{version}.tgz#{".cpt" if @encrypted}"
+      end
+
       def me
         self.class.name.split("::").last
-      end
-
-      def branch
-        "#@project/#@branch"
-      end
-
-      def version
-        "#{branch}/#@version"
       end
 
       def requires(name)
         v = get_option(name)
         if v.nil?
-          #ap @options
           raise "Publisher #{me} requires option #{name}"
         end
         v
@@ -117,6 +126,16 @@ module Volley
         n = name.to_sym
         Volley.config.send(n)
       end
+
+      def dir(project, branch, version=nil)
+        version = version == 'latest' ? get_latest(project, branch) : version
+        [project, branch, version].compact.join("/")
+      end
+
+      def log(msg)
+        Volley::Log.send(@loglevel, msg)
+      end
+
     end
   end
 end

@@ -5,32 +5,8 @@ module Volley
     class Amazons3 < Base
       attr_accessor :key, :secret
 
-      def files
-        hash = {:desc => {}, :all => {}, :latest => {}}
-        @connection.directories.get(@bucket).files.collect{|e| e.key}.each do |e|
-          (pr, br, vr) = e.split(/\//)
-          hash[:desc][pr] ||= {}
-          hash[:desc][pr][br] ||= {}
-          hash[:desc][pr][br][vr] ||= []
-          hash[:desc][pr][br][vr] << e
-          hash[:all] ||= {}
-          hash[:latest] ||= {}
-          v = "#{pr}/#{br}/#{vr}"
-          hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
-          hash[:all][v] = hash["latest"] == v
-        end
-        #ap hash
-        hash
-      end
-
-      def all
-        files[:all]
-      end
-
       def projects
-        data = files
-        data[:desc].keys
-        #files.collect{|e| e.split(/\//).first }.uniq
+        files[:desc].keys
       rescue => e
         Volley::Log.warn "error getting project list from publisher: #{e.message} at #{e.backtrace.first}"
         []
@@ -38,7 +14,6 @@ module Volley
 
       def branches(pr)
         files[:desc][pr].keys
-        #files.select{|e| e.split(/\//).first == pr}.collect{|e| e.split(/\//)[1]}
       rescue => e
         Volley::Log.warn "error getting branch list from publisher: #{e.message}"
         []
@@ -48,7 +23,6 @@ module Volley
         files[:desc][pr][br].keys.map do |e|
           e == 'latest' ? "latest => #{files[:latest]["#{pr}/#{br}"]}" : e
         end
-        #raise "not implemented"
       rescue => e
         Volley::Log.warn "error getting version list from publisher: #{e.message}"
         []
@@ -69,8 +43,6 @@ module Volley
         Volley::Log.info "delete_project #{project}"
         dir = @connection.directories.get(@bucket)
         dir.files.select{|e| e.key =~ /^#{project}\//}.each do |f|
-          #k = e.key
-          #f = dir.files.get(k)
           Volley::Log.info "- #{f.key}"
           f.destroy
         end
@@ -81,20 +53,13 @@ module Volley
         false
       end
 
-      private
+      protected
 
       def load_configuration
         @key       = requires(:aws_access_key_id)
         @secret    = requires(:aws_secret_access_key)
         @bucket    = requires(:bucket)
-        @local     = requires(:local)
-        @debug     = optional(:debug, false)
-        @encrypted = optional(:encrypted, false)
         connect
-      end
-
-      def remote_file
-        "#@branch-#@version.tgz#{".cpt" if @encrypted}"
       end
 
       def push_file(name, dir, contents)
@@ -135,6 +100,28 @@ module Volley
             :aws_access_key_id     => @key,
             :aws_secret_access_key => @secret,
         )
+      end
+
+      def files
+        hash = {:desc => {}, :all => {}, :latest => {}}
+        @connection.directories.get(@bucket).files.collect{|e| e.key}.each do |e|
+          (pr, br, vr) = e.split(/\//)
+          hash[:desc][pr] ||= {}
+          hash[:desc][pr][br] ||= {}
+          hash[:desc][pr][br][vr] ||= []
+          hash[:desc][pr][br][vr] << e
+          hash[:all] ||= {}
+          hash[:latest] ||= {}
+          v = "#{pr}/#{br}/#{vr}"
+          hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
+          hash[:all][v] = hash["latest"] == v
+        end
+        #ap hash
+        hash
+      end
+
+      def all
+        files[:all]
       end
     end
   end

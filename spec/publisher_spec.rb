@@ -40,8 +40,19 @@ shared_examples_for Volley::Publisher::Base do
     expect(@pub.versions("spec", "trunk")).to match_array(%w{1 2 latest})
   end
 
+  it "should be able to tell me the list of files" do
+    expect(@pub.contents("spec","trunk","2")).to match_array(%w{trunk-1.tgz})
+  end
+
+  it "should be able to get a remote volleyfile" do
+    Dir.chdir("#{root}/test/project")
+    expect(@pub.push("spec","trunk","3","Volleyfile")).to eq(true)
+    Dir.chdir(root)
+    expect(@pub.volleyfile("spec","trunk","3")).to match(/local\/Volleyfile-.*-.*/)
+  end
+
   it "should be able to tell me the latest of a project and branch" do
-    expect(@pub.latest("spec", "trunk")).to eq("spec/trunk/2")
+    expect(@pub.latest("spec", "trunk")).to eq("spec/trunk/3")
   end
 
   it "should throw an exeception when trying to publish a duplicate artifact" do
@@ -58,10 +69,6 @@ describe Volley::Publisher::Local do
   remote = "#{root}/test/publisher/remote"
   local  = "#{root}/test/publisher/local"
   [local, remote].each { |d| %x{rm -rf #{d}/*} }
-
-  after(:all) do
-    %x{rm -rf #{root}/test/publisher}
-  end
 
   before(:each) do
     @pub = Volley::Publisher::Local.new(:directory => remote, :local => local)

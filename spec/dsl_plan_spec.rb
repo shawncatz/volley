@@ -73,7 +73,6 @@ describe Volley::Dsl::Plan do
   it "should handle argument defaults" do
     @plan.argument(:testarg, :default => "false")
     expect {@plan.call(:args => ["descriptor=test@trunk/2"])}.not_to raise_exception
-    Volley::Log.debug "ARGS: #{@plan.args.inspect}"
     expect(@plan.args.testarg).to eq("false")
   end
 

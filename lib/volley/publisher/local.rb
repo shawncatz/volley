@@ -3,7 +3,9 @@ module Volley
     class Local < Base
 
       def projects
-        Dir["#@directory/*"].map {|e| e.gsub(/#@directory\//,"")}
+        l = Dir["#@directory/*"]
+        puts "projects: #{l.inspect}"
+        l.map {|e| e.gsub(/#@directory\//,"")}
       end
 
       def branches(pr)
@@ -18,6 +20,13 @@ module Volley
         d = "#@directory/#{project}/#{branch}/#{version}"
         Volley::Log.debug "exists? #{d}"
         File.directory?(d)
+      end
+
+      def contents(project, branch, version)
+        d = "#@directory/#{project}/#{branch}/#{version}"
+        Dir["#{d}/*"].map do |e|
+          e.gsub("#{d}/","")
+        end
       end
 
       def delete_project(project)
@@ -36,37 +45,29 @@ module Volley
         @debug     = optional(:debug, false)
       end
 
-      def remote_file
-        "#@branch-#@version.tgz#{".cpt" if @encrypted}"
-      end
-
-      def push_file(local, path, content = nil)
-        Volley::Log.debug "content=#{content.inspect}"
-        local = File.basename(local) if local =~ /^\//
-        dest = "#@directory/#{path}"
-        file = "#{dest}/#{local}"
-        Volley::Log.info".. -> #{dest}"
-        FileUtils.mkdir_p(File.dirname(file))
+      def push_file(dir, file, content = nil)
+        file = File.basename(file) if file =~ /^\//
+        dest = "#@directory/#{dir}/#{file}"
+        log "-> #{file}"
+        FileUtils.mkdir_p(File.dirname(dest))
         content = content.read if content.is_a?(File)
         if content
-          File.open(file, "w") { |f| f.write(content) }
+          File.open(dest, "w") {|f| f.write(content)}
         else
-          FileUtils.copy(local, file)
+          FileUtils.copy(file, dest)
         end
-        Volley::Log.info".. => #{file}"
+        log "=> #{dest}"
       end
 
-      def pull_file(file, path, ldir=nil)
-        remote = "#@directory/#{path}"
-        Volley::Log.info".. <- #{remote}/#{file}"
-        if ldir
-          FileUtils.mkdir_p(ldir)
-        end
-        if ldir
-          Volley::Log.info".. <= #@local/#{path}/#{file}"
-          FileUtils.copy("#{remote}/#{file}", "#@local/#{path}")
+      def pull_file(dir, file, localdir=nil)
+        remote = "#@directory/#{dir}"
+        log "<- #{dir}/#{file}"
+        if localdir
+          FileUtils.mkdir_p(localdir)
+          log "<= #@local/#{dir}/#{file}"
+          FileUtils.copy("#{remote}/#{file}", "#@local/#{dir}")
         else
-          File.open("#{remote}/#{file}") { |f| f.read }
+          File.read("#{remote}/#{file}")
         end
       end
     end
