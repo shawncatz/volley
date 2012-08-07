@@ -65,9 +65,10 @@ module Volley
           if pub
             if pub.projects.include?(project) && branch
               vf = pub.volleyfile(project, branch, version)
+              version = pub.latest(project, branch).split("/").last if version.nil? || version == "latest"
               Volley::Log.debug "downloaded volleyfile: #{vf}"
               Volley::Dsl::VolleyFile.load(vf)
-              process(:plan => plan, :desc => desc, :args => args, :second => true)
+              process(:plan => "#{project}:#{plan}", :descriptor => "#{project}@#{branch}:#{version}", :args => args, :second => true)
             else
               raise "project #{project} does not exist in configured publisher #{pub.class}"
             end
