@@ -2,6 +2,10 @@ module Volley
   module Publisher
     class Local < Base
 
+      def all
+        #TODO: make this work like the S3 version
+      end
+
       def projects
         l = Dir["#@directory/*"]
         l.map {|e| e.gsub(/#@directory\//,"")}

@@ -5,6 +5,10 @@ module Volley
     class Amazons3 < Base
       attr_accessor :key, :secret
 
+      def all
+        files[:all]
+      end
+
       def projects
         files[:desc].keys
       rescue => e
@@ -114,10 +118,6 @@ module Volley
         end
         #ap hash
         hash
-      end
-
-      def all
-        files[:all]
       end
     end
   end
