@@ -183,11 +183,12 @@ module Volley
         o = {
             :project => @project.name,
             :plan    => "pull",
+            :branch  => branch,
+            :version => version,
         }.merge(opts)
 
         action "volley-#{o[:project]}-#{o[:plan]}" do
-          options = { :plan => "#{project}:#{plan}", :descriptor => "#{project}@#{branch}:#{version}", :args => @origargs }.merge(o)
-          Volley.process(options)
+          Volley.process("#{project}:#{plan}", "#{o[:project]}@#{o[:branch]}:#{o[:version]}", :args => @origargs)
         end
       end
 
