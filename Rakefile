@@ -9,6 +9,12 @@ require 'volley'
 desc 'Default: run specs.'
 task :default => :test
 
+task :uninstall do
+  exec "gem uninstall -a -x volley"
+end
+
+### TEST STUFF
+
 desc "Run specs"
 RSpec::Core::RakeTask.new(:spec) do |t|
   t.pattern = "./spec/**/*_spec.rb" # don't need this, it's default.
