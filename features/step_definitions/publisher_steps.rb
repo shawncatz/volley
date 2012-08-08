@@ -2,13 +2,13 @@ def publish(desc)
   pwd = Dir.pwd
   Dir.chdir("test/project")
   Volley::Dsl::VolleyFile.load("Volleyfile")
-  Volley.process(:plan => "publish", :descriptor => desc)
+  Volley.process("publish", desc, {})
   Dir.chdir(pwd)
 end
 
 def deploy(desc)
   pwd = Dir.pwd
-  Volley.process(:plan => "deploy", :descriptor => desc)
+  Volley.process("deploy", desc, {})
   Dir.chdir(pwd)
 end
 

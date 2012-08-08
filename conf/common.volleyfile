@@ -34,16 +34,6 @@ project :volley do
     default do
       (project, branch, version) = args.descriptor.get
 
-      if project.nil? && argv.count
-        first = argv.first
-        (p, b, v) = first.split(/\//) if first
-        if p
-          project = p
-          branch  = b
-          version = v
-        end
-      end
-
       pub  = Volley::Dsl.publisher
       data = []
       if args.all

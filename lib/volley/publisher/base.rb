@@ -43,11 +43,15 @@ module Volley
         @latest["#{project}/#{branch}"] ||= pull_file(dir(project,branch), "latest")
       end
 
+      def latest_version(project, branch)
+        latest(project, branch).split("/").last
+      end
+
       def volleyfile(project, branch, version="latest")
         d = dir(project,branch,version)
         contents = pull_file(d, "Volleyfile")
 
-        dest     = "#{@options[:local]}/Volleyfile-#{Time.now.to_i}-#{$$}"
+        dest     = "#@local/Volleyfile-#{Time.now.to_i}-#{$$}"
         raise "File #{dest} already exists" if File.exists?(dest)
 
         log "saving Volleyfile: #{dest}"
@@ -129,7 +133,7 @@ module Volley
       end
 
       def dir(project, branch, version=nil)
-        version = version == 'latest' ? latest(project, branch).split("/").last : version
+        version = version == 'latest' ? latest_version(project, branch) : version
         [project, branch, version].compact.join("/")
       end
 

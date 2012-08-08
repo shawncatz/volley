@@ -3,20 +3,33 @@ module Volley
   class Meta
     def initialize(file="#{Volley.config.directory}/meta.yaml")
       @file = file
-      raise "file does not exist" unless File.file?(@file)
-      @data = YAML.load_file(@file)
+      dir = File.dirname(file)
+      unless File.directory?(dir)
+        Volley::Log.warn "meta file directory does not exist: #{dir}"
+        FileUtils.mkdir_p(dir)
+      end
+      @data = YAML.load_file(@file) || {} rescue {}
     end
 
     def [](project)
-      @data[project.to_sym]
+      @data[:projects] ||= {}
+      @data[:projects][project.to_sym]
     end
 
     def []=(project, version)
-      @data[project.to_sym] = version
+      @data[:projects] ||= {}
+      @data[:projects][project.to_sym] = version
     end
 
     def save
-      File.open(@file, "w") {|f| f.write(@data.to_yaml)}
+      @data[:volley] ||= {}
+      @data[:volley][:version] = Volley::Version::STRING
+      File.open(@file, "w+") {|f| f.write(@data.to_yaml)}
+    end
+
+    def check(project, branch, version)
+      version = Volley::Dsl.publisher.latest_version(project, branch) if version.nil? || version == 'latest'
+      self[project] == "#{branch}:#{version}"
     end
   end
 end

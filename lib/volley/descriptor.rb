@@ -13,9 +13,7 @@ module Volley
         raise "error parsing descriptor: #{desc}" if (list.count < 2 || list.count > 3) && !@options[:partial]
         (@project, @branch, @version) = list
         @version ||= "latest"
-        #if @version.nil? || @version == "latest"
-        #  @version = Volley.publisher.latest(@project, @branch).split("/").last || nil rescue nil
-        #end
+
         raise "error parsing descriptor: #{desc}" unless (@project && @branch && @version) || @options[:partial]
       end
     end
@@ -29,7 +27,7 @@ module Volley
     end
 
     def to_s
-      "#@project@#@branch#{":#@version" unless @version == "latest"}"
+      "#@project@#@branch:#@version"
     end
   end
 end

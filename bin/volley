@@ -33,6 +33,7 @@ Options:
   -d --debug          show debug output, change log level to debug
   -c --config FILE    load additional Volleyfile [default: ~/.Volleyfile]
   -p --primary FILE   load primary Volleyfile [default: ./Volleyfile]
+  -F --force          force operations (redeploy version, republish artifact)
 
   -f --fork           fork process into background and exit
   -l --log LOG        log file [default: /opt/volley/volley.log]
@@ -53,6 +54,8 @@ module Volley
       fork        = options[:fork]
       log         = options[:log]
       level       = options[:level]
+      force       = options[:force]
+      args        = {}
 
       Volley::Dsl::VolleyFile.init
       Volley::Dsl::VolleyFile.load(config, :optional => true)
@@ -79,6 +82,9 @@ module Volley
         plan = "#{project}:#{plan}"
       end
 
+      args = kvs.inject({}) {|h, e| (k, v) = e.split(/=/); h[k.to_sym] = v; h }
+      args[:force] = force
+
       if debug
         Volley::Log.debug "## OPTIONS ##"
         Volley::Log.debug "plan:       #{plan}"
@@ -88,9 +94,9 @@ module Volley
       end
 
       Volley::Log.info "processing '#{plan}' plan for '#{desc}'"
-      Volley.process(:plan => plan, :descriptor => desc, :args => kvs)
+      Volley.process(plan, desc, args)
     rescue => e
-      Volley::Log.error "exception: #{e.message} at #{e.backtrace.first}"
+      Volley::Log.error "error: #{e.message} at #{e.backtrace.first}"
       if debug
         Volley::Log.error e
       else
