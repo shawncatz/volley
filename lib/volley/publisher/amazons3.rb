@@ -82,7 +82,6 @@ module Volley
           local = "#{localdir}/#{file}"
           File.open(local, "w") { |lf| lf.write(contents) }
         else
-          Volley::Log.debug "CONTENTS: #{contents}"
           contents
         end
       end
