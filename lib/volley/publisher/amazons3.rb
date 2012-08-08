@@ -5,6 +5,10 @@ module Volley
     class Amazons3 < Base
       attr_accessor :key, :secret
 
+      def all
+        files[:all]
+      end
+
       def projects
         files[:desc].keys
       rescue => e
@@ -82,7 +86,6 @@ module Volley
           local = "#{localdir}/#{file}"
           File.open(local, "w") { |lf| lf.write(contents) }
         else
-          Volley::Log.debug "CONTENTS: #{contents}"
           contents
         end
       end
@@ -115,10 +118,6 @@ module Volley
         end
         #ap hash
         hash
-      end
-
-      def all
-        files[:all]
       end
     end
   end
