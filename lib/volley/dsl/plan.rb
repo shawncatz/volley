@@ -107,13 +107,18 @@ module Volley
       def version
         v = args.descriptor ? args.descriptor.version : nil
         if v.nil? || v == "latest"
-          if deploying?
-            v = Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
-          elsif publishing?
-            v = source.revision
+          v = begin
+            if deploying?
+              Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch) || v
+            elsif publishing?
+              source.revision || v
+            end
+          rescue => e
+            Volley::Log.debug "failed to get version? #{v.inspect} : #{e.message}"
+            Volley::Log.debug e
+            v
           end
         end
-        raise "version is nil" unless v
         v
       end
 
