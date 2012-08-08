@@ -76,12 +76,13 @@ module Volley
 
         contents = f.body
 
+        log "<= #{dir}/#{file}"
         if localdir
           FileUtils.mkdir_p(localdir)
           local = "#{localdir}/#{file}"
-          log "<= #{local}"
           File.open(local, "w") { |lf| lf.write(contents) }
         else
+          Volley::Log.debug "CONTENTS: #{contents}"
           contents
         end
       end

@@ -58,33 +58,33 @@ describe Volley::Dsl::Plan do
   it "should handle arguments" do
     @plan.argument(:testarg)
     expect(@plan.arguments.count).to eq(2) # descriptor and testarg
-    @plan.call(:args => ["descriptor=test@trunk/1","testarg=true"])
+    @plan.call(:args => {:descriptor => "test@trunk/1",:testarg => "true"})
     expect(@plan.args.testarg).to eq("true")
   end
 
   it "should handle arguments (with remote false)" do
     @notremote.argument(:testarg)
     expect(@notremote.arguments.count).to eq(2) # descriptor and testarg
-    @notremote.call(:args => ["testarg=true"])
+    @notremote.call(:args => {:testarg => "true"})
     expect(@notremote.args.testarg).to eq("true")
   end
 
   # boolean as strings because we test conversion later
   it "should handle argument defaults" do
     @plan.argument(:testarg, :default => "false")
-    expect {@plan.call(:args => ["descriptor=test@trunk/2"])}.not_to raise_exception
+    expect {@plan.call(:args => {:descriptor => "test@trunk/2"})}.not_to raise_exception
     expect(@plan.args.testarg).to eq("false")
   end
 
   # boolean as strings because we test conversion later
   it "should handle arguments overriding defaults" do
     @plan.argument(:testarg, :default => "false")
-    expect {@plan.call(:args => ["descriptor=test@trunk/3","testarg=true"])}.not_to raise_exception
+    expect {@plan.call(:args => {:descriptor => "test@trunk/3",:testarg => "true"})}.not_to raise_exception
     expect(@plan.args.testarg).to eq("true")
   end
 
   it "should fail if required arguments aren't specified" do
-    expect {@plan.call(:args => [])}.to raise_exception
+    expect {@plan.call(:args => {})}.to raise_exception
   end
 
   [
@@ -96,7 +96,7 @@ describe Volley::Dsl::Plan do
     (type, original, value) = arg
     it "should handle converting argument: #{type}" do
       @plan.argument(type, :convert => type.to_sym)
-      @plan.call(:args => ["descriptor=test@trunk/6","#{type}=#{original}"])
+      @plan.call(:args => {:descriptor => "test@trunk/6",type.to_sym => "#{original}"})
       expect(@plan.args.send(type.to_sym)).to eq(value)
     end
   end

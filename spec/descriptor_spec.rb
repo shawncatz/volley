@@ -18,7 +18,9 @@ describe Volley::Descriptor do
       expect(d).not_to be(nil)
       expect(d.project).to eq(project)
       expect(d.branch).to eq(branch)
-      expect(d.version).to eq(version)
+      if version != "latest"
+        expect(d.version).to eq(version)
+      end
     end
   end
 

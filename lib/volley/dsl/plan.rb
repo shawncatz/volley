@@ -45,6 +45,7 @@ module Volley
       end
 
       def call(options={ })
+        @mode = @name.to_s =~ /deploy/i ? :deploy : :publish
         Volley::Log.debug "## #{@project.name} : #@name"
         @origargs = options[:args]
         data      = @origargs
@@ -57,6 +58,14 @@ module Volley
 
         run_actions
         [branch, version].join(":")
+      end
+
+      def deploying?
+        @mode == :deploy
+      end
+
+      def publishing?
+        @mode == :publish
       end
 
       def usage
@@ -87,7 +96,7 @@ module Volley
       end
 
       def remote(tf)
-        raise "remote can only be set to true or false" unless [true,false].include?(tf)
+        raise "remote can only be set to true or false" unless [true, false].include?(tf)
         @attributes.remote = tf
       end
 
@@ -97,9 +106,14 @@ module Volley
 
       def version
         v = args.descriptor ? args.descriptor.version : nil
-        if v == "latest"
-          v = source.revision || nil
+        if v.nil? || v == "latest"
+          if deploying?
+            v = Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
+          elsif publishing?
+            v = source.revision
+          end
         end
+        raise "version is nil" unless v
         v
       end
 
@@ -197,16 +211,11 @@ module Volley
       private
       def process_arguments(raw)
         Volley::Log.debug ".. process arguments: #{raw.inspect}"
-        if raw
-          kvs   = raw.select { |e| e =~ /\=/ }
-          raw   = raw.reject { |e| e =~ /\=/ }
-          @argv = raw
-          kvs.each do |a|
-            (k, v) = a.split(/\=/)
-            if @arguments[k.to_sym]
-              Volley::Log.debug ".. .. setting argument: #{k} = #{v}"
-              @arguments[k.to_sym].value = v
-            end
+        @argv = raw
+        raw.each do |k, v|
+          if @arguments[k.to_sym]
+            Volley::Log.debug ".. .. setting argument: #{k} = #{v}"
+            @arguments[k.to_sym].value = v
           end
         end
         @arguments.each do |k, v|

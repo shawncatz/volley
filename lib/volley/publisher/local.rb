@@ -41,7 +41,6 @@ module Volley
 
       def load_configuration
         @directory = requires(:directory)
-        @local     = requires(:local)
         @debug     = optional(:debug, false)
       end
 
@@ -62,9 +61,10 @@ module Volley
       def pull_file(dir, file, localdir=nil)
         remote = "#@directory/#{dir}"
         raise ArtifactMissing, "missing: #{remote}" unless File.exists?("#{remote}/#{file}")
+
+        log "<= #@local/#{dir}/#{file}"
         if localdir
           FileUtils.mkdir_p(localdir)
-          log "<= #@local/#{dir}/#{file}"
           FileUtils.copy("#{remote}/#{file}", "#@local/#{dir}")
         else
           File.read("#{remote}/#{file}")

@@ -1,3 +1,4 @@
 
-:spec: trunk:2
-:test: staging:3
+:projects:
+  :spec: trunk:2
+  :test: staging:3

@@ -9,7 +9,7 @@ Volley::Log.console_disable
 shared_examples_for Volley::Publisher::Base do
   before(:all) do
     @remote = "#{root}/test/publisher/remote"
-    @local  = "#{root}/test/publisher/local"
+    @local  = "/opt/volley"
     FileUtils.mkdir_p(@remote)
     FileUtils.mkdir_p(@local)
     [@local, @remote].each { |d| %x{rm -rf #{d}/*} }
@@ -76,7 +76,7 @@ describe Volley::Publisher::Local do
   it_behaves_like Volley::Publisher::Base
 
   before(:each) do
-    @pub = Volley::Publisher::Local.new(:directory => @remote, :local => @local)
+    @pub = Volley::Publisher::Local.new(:directory => @remote)
   end
 end
 
@@ -86,7 +86,6 @@ describe Volley::Publisher::Amazons3 do
   before(:each) do
     @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
                                            :aws_secret_access_key => "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",
-                                           :bucket => "inqcloud-volley-test",
-                                           :local => @local)
+                                           :bucket => "inqcloud-volley-test")
   end
 end
