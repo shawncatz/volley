@@ -65,14 +65,11 @@ project :volley do
       end
     end
   end
-  plan :remote do
+  plan :meta, :remote => false do
     default do
-      pub = Volley::Dsl.publisher
-      (pr, br, vr) = args.descriptor.get
-      vr ||= 'latest'
-      vf = pub.volleyfile(:project => pr, :branch => br, :version => vr)
-      load vf
-      volley :project => "volley", :plan => "list"
+      Volley.meta.projects.each do |k, v|
+        puts "#{k} => #{v}"
+      end
     end
   end
 end

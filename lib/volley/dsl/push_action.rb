@@ -12,10 +12,10 @@ module Volley
         raise "stage instance must be set" unless @stage
         raise "plan instance must be set" unless @plan
 
-        @plan.action :files, :post do
+        @plan.action :files, :main do
           raise "branch(#{branch}) and version(#{version}) must be specified" unless branch && version
 
-          list     = yield
+          list     = yield if block
           list     = [*list].flatten
           # use #exists? so it can work for directories
           notfound = list.reject { |f| File.exists?(f) }
@@ -32,8 +32,8 @@ module Volley
             Dir.mkdir(path)
             dir = Dir.pwd
 
+            Volley::Log.debug ".. files: #{files.inspect}"
             files.each do |art|
-              Volley::Log.debug "art:#{art}"
               next unless art
               if art =~ /^\// && art !~ /^#{dir}/
                 # file is full path and not in current directory
@@ -47,7 +47,6 @@ module Volley
               end
 
               begin
-                Volley::Log.debug "pack file: #{source} => #{dest}"
                 FileUtils.mkdir_p(File.dirname(dest))
                 if File.directory?(source)
                   FileUtils.cp_r(source, dest)

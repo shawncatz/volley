@@ -14,7 +14,6 @@ module Volley
       end
 
       def call
-        Volley::Log.debug ".. #@name"
         @actions.each do |action|
           action.call
         end

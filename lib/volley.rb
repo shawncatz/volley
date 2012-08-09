@@ -45,7 +45,8 @@ module Volley
             # plan is defined
 
             if plan == "deploy" && Volley.meta.check(project, branch, version) && !args[:force]
-              raise "project #{project} is already #{branch}:#{version}"
+              Volley::Log.info "project #{project} is already #{branch}:#{version}"
+              return
             end
 
             args[:descriptor] = desc
@@ -73,7 +74,7 @@ module Volley
               Volley::Log.debug "downloaded volleyfile: #{vf}"
               Volley::Dsl::VolleyFile.load(vf)
               args[:second] = true
-              process("#{project}:#{plan}", desc.to_s, args)
+              process("#{project}:#{plan}", "#{project}@#{branch}:#{version}", args)
             else
               raise "project #{project} does not exist in configured publisher #{pub.class}"
             end
