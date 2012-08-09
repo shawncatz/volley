@@ -93,8 +93,12 @@ module Volley
         Volley::Log.debug "key:value:  #{kvs.join(",")}"
       end
 
-      Volley::Log.info "processing '#{plan}' plan for '#{desc}'"
+      #Volley::Log.info "processing '#{plan}' plan for '#{desc}'"
       Volley.process(plan, desc, args)
+    rescue Interrupt
+      Volley::Log.info "interrupted"
+    rescue SystemExit
+      Volley::Log.info "exited"
     rescue => e
       Volley::Log.error "error: #{e.message} at #{e.backtrace.first}"
       if debug

@@ -16,15 +16,15 @@ module Volley
       end
 
       def call
-        Volley::Log.debug ".. .. #@name"
+        Volley::Log.debug "## #{project.name}:#{@plan.name}[#{@stage}]##@name"
         self.instance_eval &@block if @block
       end
 
-      delegate :project, :args, :files, :file, :attributes, :log, :arguments, :argv, :branch, :version, :action,
+      delegate :project, :args, :files, :file, :attributes, :log, :arguments, :argv, :branch, :version, :action, :volley,
                :to => :plan
 
       def command(cmd)
-        @plan.shellout(cmd)
+        plan.shellout(cmd)
       end
     end
   end

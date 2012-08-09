@@ -10,28 +10,36 @@ module Volley
       end
 
       def projects
-        files[:desc].keys
+        r = files[:desc].keys || [] rescue []
+        Volley::Log.info "could not find projects" unless r.count > 0
+        r
       rescue => e
         Volley::Log.warn "error getting project list from publisher: #{e.message} at #{e.backtrace.first}"
         []
       end
 
       def branches(pr)
-        files[:desc][pr].keys
+        r = files[:desc][pr].keys || [] rescue []
+        Volley::Log.info "could not find #{pr}" unless r.count > 0
+        r
       rescue => e
         Volley::Log.warn "error getting branch list from publisher: #{e.message}"
         []
       end
 
       def versions(pr, br)
-        files[:desc][pr][br].keys
+        r = files[:desc][pr][br].keys || [] rescue []
+        Volley::Log.info "could not find #{pr}@#{br}" unless r.count > 0
+        r
       rescue => e
         Volley::Log.warn "error getting version list from publisher: #{e.message}"
         []
       end
 
       def contents(pr, br, vr)
-        files[:desc][pr][br][vr].map {|e| e.gsub("#{pr}/#{br}/#{vr}/","")}
+        r = files[:desc][pr][br][vr].map {|e| e.gsub("#{pr}/#{br}/#{vr}/","")} || [] rescue []
+        Volley::Log.info "could not find #{pr}@#{br}:#{vr}" unless r.count > 0
+        r
       rescue => e
         Volley::Log.warn "error getting contents list from publisher: #{e.message}"
         []
@@ -44,7 +52,7 @@ module Volley
       def delete_project(project)
         Volley::Log.info "delete_project #{project}"
         dir = @connection.directories.get(@bucket)
-        dir.files.select{|e| e.key =~ /^#{project}\//}.each do |f|
+        dir.files.select { |e| e.key =~ /^#{project}\// }.each do |f|
           Volley::Log.info "- #{f.key}"
           f.destroy
         end
@@ -58,9 +66,9 @@ module Volley
       protected
 
       def load_configuration
-        @key       = requires(:aws_access_key_id)
-        @secret    = requires(:aws_secret_access_key)
-        @bucket    = requires(:bucket)
+        @key    = requires(:aws_access_key_id)
+        @secret = requires(:aws_secret_access_key)
+        @bucket = requires(:bucket)
         connect
       end
 
@@ -68,14 +76,14 @@ module Volley
         file = File.basename(file)
         dest = "#{dir}/#{file}"
         #log "-> #@bucket/#{path}"
-        f = root.files.create(:key => dest, :body => contents, :public => true)
+        f    = root.files.create(:key => dest, :body => contents, :public => true)
         log "=> #{f.public_url.gsub("%2F", "/")}"
         dest
       end
 
       def pull_file(dir, file, localdir=nil)
         remote = "#{dir}/#{file}"
-        f = root.files.get(remote)
+        f      = root.files.get(remote)
         raise ArtifactMissing, "missing: #{remote}" unless f
 
         contents = f.body
@@ -103,16 +111,16 @@ module Volley
       end
 
       def files
-        hash = {:desc => {}, :all => {}, :latest => {}}
-        @connection.directories.get(@bucket).files.collect{|e| e.key}.each do |e|
-          (pr, br, vr) = e.split(/\//)
-          hash[:desc][pr] ||= {}
-          hash[:desc][pr][br] ||= {}
+        hash = { :desc => { }, :all => { }, :latest => { } }
+        @connection.directories.get(@bucket).files.collect { |e| e.key }.each do |e|
+          (pr, br, vr)            = e.split(/\//)
+          hash[:desc][pr]         ||= { }
+          hash[:desc][pr][br]     ||= { }
           hash[:desc][pr][br][vr] ||= []
           hash[:desc][pr][br][vr] << e
-          hash[:all] ||= {}
-          hash[:latest] ||= {}
-          v = "#{pr}/#{br}/#{vr}"
+          hash[:all]    ||= { }
+          hash[:latest] ||= { }
+          v             = "#{pr}/#{br}/#{vr}"
           #hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
           hash[:all][v] = hash["latest"] == v
         end

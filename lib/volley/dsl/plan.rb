@@ -4,6 +4,7 @@ module Volley
   module Dsl
     class Plan
       attr_accessor :argv
+      attr_reader :name
       attr_reader :project
       attr_reader :stages
       attr_reader :arguments
@@ -46,15 +47,15 @@ module Volley
 
       def call(options={ })
         @mode = @name.to_s =~ /deploy/i ? :deploy : :publish
-        Volley::Log.debug "## #{@project.name} : #@name"
+        Volley::Log.debug "## #{@project.name}:#@name  (#@mode)"
         @origargs = options[:args]
         data      = @origargs
 
         process_arguments(data)
 
         raise "descriptor must be specified" if @attributes.remote && !args.descriptor
-        #raise "cannot determine branch" unless branch
-        #raise "cannot determine version" unless version
+
+        Volley::Log.info ">> #{@project.name}:#@name"
 
         run_actions
         [branch, version].join(":")
@@ -101,7 +102,9 @@ module Volley
       end
 
       def branch
-        (args.descriptor ? args.descriptor.branch : nil) || source.branch || nil
+        return args.descriptor.branch if args.descriptor
+        return source.branch if publishing?
+        nil
       end
 
       def version
@@ -146,29 +149,12 @@ module Volley
         argument :output, :attr => true, :default => tf, :convert => :boolean
       end
 
-      def default(&block)
-        action(:default, :main, &block)
-      end
-
       def action(name, stage=:main, &block)
         @stages[stage].action(name, :plan => self, :stage => stage, &block)
-        #n = name.to_sym
-        #@actions[stage] << { :name => n, :stage => stage, :block => block }
       end
 
-      def file(file)
-        @files << file
-      end
-
-      def files(*list)
-        list = [*list].flatten
-        if @files.count > 0 && list.count > 0
-          Volley::Log.warn "overriding file list"
-          Volley::Log.debug "files: #{@files.inspect}"
-          Volley::Log.debug "new: #{list.inspect}"
-        end
-        @files = list if list.count > 0
-        @files
+      def default(&block)
+        action(:default, :main, &block)
       end
 
       def push(&block)
@@ -179,23 +165,38 @@ module Volley
         Volley::Dsl::PullAction.new(:pull_dummy, :plan => self, :stage => :main, &block)
       end
 
-      def volley(opts={ })
+      def volley(plan, options={}, &block)
         o = {
-            :project => @project.name,
-            :plan    => "pull",
-            :branch  => branch,
-            :version => version,
-        }.merge(opts)
+            :run => plan,
+            :plan => self,
+            :stage => :main,
+            :descriptor => args.descriptor,
+            :args => {},
+        }.merge(options)
+        @stages[:main].add Volley::Dsl::VolleyAction.new("volley-#{plan}", o)
+      end
 
-        action "volley-#{o[:project]}-#{o[:plan]}" do
-          Volley.process("#{project}:#{plan}", "#{o[:project]}@#{o[:branch]}:#{o[:version]}", :args => @origargs)
-        end
+      def file(file)
+        @files << file
+      end
+
+      def files(*list)
+        list = [*list].flatten
+        list.each {|e| file e} if list.count > 0
+        #if @files.count > 0 && list.count > 0
+        #  Volley::Log.warn "overriding file list"
+        #  Volley::Log.debug "files: #{@files.inspect}"
+        #  Volley::Log.debug "new: #{list.inspect}"
+        #end
+        #@files = list if list.count > 0
+        #@files
+        @files
       end
 
       def command(*args)
         name = args.join(" ").parameterize.to_sym
         action name do
-          shellout(*args)
+          plan.shellout(*args)
         end
       end
 
@@ -216,11 +217,10 @@ module Volley
 
       private
       def process_arguments(raw)
-        Volley::Log.debug ".. process arguments: #{raw.inspect}"
         @argv = raw
         raw.each do |k, v|
           if @arguments[k.to_sym]
-            Volley::Log.debug ".. .. setting argument: #{k} = #{v}"
+            Volley::Log.debug ".. argument: #{k} = #{v}"
             @arguments[k.to_sym].value = v
           end
         end

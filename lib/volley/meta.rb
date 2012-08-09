@@ -31,5 +31,9 @@ module Volley
       version = Volley::Dsl.publisher.latest_version(project, branch) if version.nil? || version == 'latest'
       self[project] == "#{branch}:#{version}"
     end
+
+    def projects
+      @data[:projects]
+    end
   end
 end
