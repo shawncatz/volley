@@ -39,6 +39,10 @@ module Volley
           end
         METHOD_DEFN
       end
+
+      def reset
+        @loggers = {}
+      end
     end
   end
 end

@@ -4,6 +4,7 @@ require 'rubygems'
 require 'docopt'
 require 'volley'
 require 'awesome_print'
+require 'daemons'
 
 DOC = <<-DOC
 Usage: volley [options] <plan> <descriptor> [argument]...
@@ -55,11 +56,13 @@ module Volley
       log         = options[:log]
       level       = options[:level]
       force       = options[:force]
-      args        = {}
+      args        = { }
+
 
       Volley::Dsl::VolleyFile.init
       Volley::Dsl::VolleyFile.load(config, :optional => true)
       Volley::Dsl::VolleyFile.load(primary, :primary => true) if File.file?(primary)
+
       Volley::Log.add(level.to_sym, log)
       Volley::Log.console_debug if debug
       Volley.config.debug = debug
@@ -79,10 +82,10 @@ module Volley
         # the plan isn't reserved
         raise "must specify descriptor" unless desc
         (project, branch, version) = Volley::Descriptor.new(desc).get
-        plan = "#{project}:#{plan}"
+        plan                       = "#{project}:#{plan}"
       end
 
-      args = kvs.inject({}) {|h, e| (k, v) = e.split(/=/); h[k.to_sym] = v; h }
+      args         = kvs.inject({ }) { |h, e| (k, v) = e.split(/=/); h[k.to_sym] = v; h }
       args[:force] = force
 
       if debug
@@ -93,7 +96,22 @@ module Volley
         Volley::Log.debug "key:value:  #{kvs.join(",")}"
       end
 
-      #Volley::Log.info "processing '#{plan}' plan for '#{desc}'"
+      if fork
+        options = {
+            :appname    => "volley",
+            :dir        => Volley.config.directory,
+            :dir_mode   => :normal,
+            :log_output => true,
+            :ontop      => false
+        }
+        Volley::Log.info "daemonizing ... "
+        Volley::Log.reset
+        Daemons.daemonize(options)
+        Volley::Log.init
+        Volley::Log.add(level.to_sym, log)
+        Volley::Log.console_debug if debug
+      end
+
       Volley.process(plan, desc, args)
     rescue Interrupt
       Volley::Log.info "interrupted"
@@ -101,11 +119,11 @@ module Volley
       Volley::Log.info "exited"
     rescue => e
       Volley::Log.error "error: #{e.message} at #{e.backtrace.first}"
-      if debug
+      #if debug
         Volley::Log.error e
-      else
-        Volley::Log.debug e
-      end
+      #else
+      #  Volley::Log.debug e
+      #end
     end
   end
 end
