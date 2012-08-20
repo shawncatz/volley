@@ -21,4 +21,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency "mixlib-shellout"
   gem.add_dependency "yell"
   gem.add_dependency "docopt"
+  gem.add_dependency "daemons"
 end
