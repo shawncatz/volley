@@ -18,7 +18,8 @@ module Volley
         []
       end
 
-      def branches(pr)
+      def branches(project)
+        pr = project.to_s
         r = files[:desc][pr].keys || [] rescue []
         Volley::Log.info "could not find #{pr}" unless r.count > 0
         r
@@ -27,7 +28,9 @@ module Volley
         []
       end
 
-      def versions(pr, br)
+      def versions(project, branch)
+        pr = project.to_s
+        br = branch.to_s
         r = files[:desc][pr][br].keys || [] rescue []
         Volley::Log.info "could not find #{pr}@#{br}" unless r.count > 0
         r
@@ -36,7 +39,10 @@ module Volley
         []
       end
 
-      def contents(pr, br, vr)
+      def contents(project, branch, version)
+        pr = project.to_s
+        br = branch.to_s
+        vr = version.to_s
         r = files[:desc][pr][br][vr].map {|e| e.gsub("#{pr}/#{br}/#{vr}/","")} || [] rescue []
         Volley::Log.info "could not find #{pr}@#{br}:#{vr}" unless r.count > 0
         r
@@ -46,7 +52,13 @@ module Volley
       end
 
       def exists?(project, branch, version)
-        !files[:desc][project][branch][version].nil? rescue false
+        pr = project.to_s
+        br = branch.to_s
+        vr = version.to_s
+        !files[:desc][pr][br][vr].nil?
+      rescue => e
+        Volley::Log.debug "exists? error: #{e.message}"
+        false
       end
 
       def delete_project(project)
