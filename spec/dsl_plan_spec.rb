@@ -57,14 +57,14 @@ describe Volley::Dsl::Plan do
 
   it "should handle arguments" do
     @plan.argument(:testarg)
-    expect(@plan.arguments.count).to eq(2) # descriptor and testarg
+    expect(@plan.arguments.count).to eq(3) # descriptor and testarg
     @plan.call(:args => {:descriptor => "test@trunk/1",:testarg => "true"})
     expect(@plan.args.testarg).to eq("true")
   end
 
   it "should handle arguments (with remote false)" do
     @notremote.argument(:testarg)
-    expect(@notremote.arguments.count).to eq(2) # descriptor and testarg
+    expect(@notremote.arguments.count).to eq(3) # descriptor and testarg
     @notremote.call(:args => {:testarg => "true"})
     expect(@notremote.args.testarg).to eq("true")
   end

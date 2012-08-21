@@ -25,6 +25,7 @@ module Volley
 
         @name        = name.to_sym
         @project     = options[:project]
+        @stopped     = false
         @block       = block
         @files       = []
         @arguments   = { }
@@ -43,6 +44,7 @@ module Volley
         else
           argument :descriptor, :convert => :descriptor, :convert_opts => { :partial => true }
         end
+        argument :force
       end
 
       def call(options={ })
@@ -57,7 +59,13 @@ module Volley
 
         Volley::Log.info ">> #{@project.name}:#@name"
 
-        run_actions
+        begin
+          run_actions
+        rescue => e
+          puts "plan#call error: #{e.message} at #{e.backtrace.first}"
+          ap self
+          raise e
+        end
         [branch, version].join(":")
       end
 
@@ -77,10 +85,19 @@ module Volley
         out.join(" ")
       end
 
-      def run_actions(*stages)
+      def run_actions
         @stage_order.each do |stage|
+          @current_stage = stage
           @stages[stage].call
         end
+      end
+
+      def stop
+        @stopped = true
+      end
+
+      def stopped?
+        @stopped
       end
 
       def method_missing(n, *args)
@@ -173,7 +190,12 @@ module Volley
             :descriptor => args.descriptor,
             :args => {},
         }.merge(options)
-        @stages[:main].add Volley::Dsl::VolleyAction.new("volley-#{plan}", o)
+        action = Volley::Dsl::VolleyAction.new("volley-#{plan}", o)
+        #if @current_stage == :post
+        #  action.call
+        #else
+          @stages[:main].add action
+        #end
       end
 
       def file(file)
@@ -226,6 +248,9 @@ module Volley
         end
         @arguments.each do |k, v|
           v.check
+        end
+        if @arguments[:force] && Volley::Dsl.publisher
+          Volley::Dsl.publisher.force = true
         end
       end
     end

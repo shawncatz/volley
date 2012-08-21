@@ -1,6 +1,8 @@
 module Volley
   module Publisher
     class Base
+      attr_accessor :force
+
       def initialize(options={ })
         @options = {
             :overwrite => false,
@@ -11,6 +13,7 @@ module Volley
         @local     = optional(:local, Volley.config.directory)
         @loglevel  = @debug ? :info : :debug
         @latest    = {}
+        @force     = false
 
         load_configuration
       end
@@ -60,7 +63,8 @@ module Volley
       end
 
       def push(project, branch, version, localfiles)
-        raise ArtifactExists, "the artifact already exists" if exists?(project, branch, version)
+        v = version == "latest" ? latest_version(project, branch) : version
+        return false if exists?(project, branch, v) && !@force
 
         localfiles = [*localfiles].flatten
         log "^^ #{me}#push"

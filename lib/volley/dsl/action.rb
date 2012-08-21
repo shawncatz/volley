@@ -16,6 +16,7 @@ module Volley
       end
 
       def call
+        return if @plan.stopped?
         Volley::Log.debug "## #{project.name}:#{@plan.name}[#{@stage}]##@name"
         self.instance_eval &@block if @block
       end

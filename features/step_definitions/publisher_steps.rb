@@ -56,8 +56,9 @@ When /^I publish a duplicate artifact (.*)$/ do |desc|
     When I publish the artifact #{desc}
   }
   begin
-    publish(desc)
+    @duplicate_published = publish(desc)
   rescue => e
+    puts "exception: #{e.message}"
     @exception = e
   end
 end
@@ -66,7 +67,7 @@ end
 When /^I force publish a duplicate artifact (.*)$/ do |desc|
   steps %Q{
     When I publish the artifact #{desc}
-        }
+  }
   begin
     publish(desc)
   rescue => e

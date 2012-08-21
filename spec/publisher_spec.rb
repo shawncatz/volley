@@ -63,8 +63,17 @@ shared_examples_for Volley::Publisher::Base do
     expect(@pub.latest("spec", "trunk")).to eq("spec/trunk/3")
   end
 
-  it "should throw an exeception when trying to publish a duplicate artifact" do
-    expect { @pub.push("spec", "trunk", "1", "./trunk-1.tgz") }.to raise_error(StandardError)
+  it "should fail to publish a duplicate artifact" do
+    expect(@pub.push("spec", "trunk", "1", "./trunk-1.tgz")).to eq(false)
+  end
+
+  it "should be able to force publish a duplicate artifact" do
+    Dir.chdir("#{root}/test/")
+    o = @pub.force
+    @pub.force = true
+    expect(@pub.push("spec", "trunk", "1", "./trunk-1.tgz")).to eq(true)
+    @pub.force = o
+    Dir.chdir(root)
   end
 
   it "should be able to delete a project" do

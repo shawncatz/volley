@@ -36,7 +36,7 @@ Feature: Publisher
   Scenario: Duplicate Artifact
     Given I have a populated repository
     When I publish a duplicate artifact test/staging/12
-    Then I should receive an exception
+    Then I should not receive an exception
 
 # TODO: make this work
 #  Scenario: Duplicate Artifact force

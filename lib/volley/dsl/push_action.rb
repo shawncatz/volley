@@ -12,6 +12,17 @@ module Volley
         raise "stage instance must be set" unless @stage
         raise "plan instance must be set" unless @plan
 
+        @plan.action :check, :pre do
+          raise "branch(#{branch}) and version(#{version}) must be specified" unless branch && version
+          p = @plan.project.name
+          b = branch
+          v = version
+          if Volley::Dsl.publisher.exists?(p, b, v)
+            log ".. artifact exists: #{p}@#{b}:#{v}"
+            @plan.stop unless args.force
+          end
+        end
+
         @plan.action :files, :main do
           raise "branch(#{branch}) and version(#{version}) must be specified" unless branch && version
 
