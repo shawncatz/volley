@@ -63,6 +63,8 @@ module Volley
             return f if File.file?(f)
           end
           nil
+        rescue ArgumentError # rescue errors with expand path
+          nil
         end
       end
     end

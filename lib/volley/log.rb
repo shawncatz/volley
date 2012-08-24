@@ -32,6 +32,12 @@ module Volley
         @loggers["STDERR"] = Yell.new(STDERR, :level => [:error, :fatal], :format => Yell::NoFormat)
       end
 
+      def console_quiet
+        console_disable
+        @loggers["STDOUT"] = Yell.new(STDOUT, :level => [:warn], :format => Yell::NoFormat)
+        @loggers["STDERR"] = Yell.new(STDERR, :level => [:error, :fatal], :format => Yell::NoFormat)
+      end
+
       %w{debug info warn error fatal}.each do |method_name|
         class_eval(<<-METHOD_DEFN, __FILE__, __LINE__)
           def #{method_name}(msg=nil, &block)

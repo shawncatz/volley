@@ -8,6 +8,7 @@ project :volley do
       puts "created: #{dest}"
     end
   end
+
   plan :list, :remote => false do
     default do
       Volley::Dsl::Project.projects.each do |p, project|
@@ -18,6 +19,7 @@ project :volley do
       end
     end
   end
+
   plan :latest do
     default do
       (project,branch,_) = args.descriptor.get
@@ -27,6 +29,7 @@ project :volley do
       puts pub.latest(project, branch)
     end
   end
+
   plan :versions, :remote => false do
     argument :all, :convert => :boolean, :default => false
     argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
@@ -65,10 +68,38 @@ project :volley do
       end
     end
   end
+
   plan :meta, :remote => false do
     default do
-      Volley.meta.projects.each do |k, v|
-        puts "#{k} => #{v}"
+      list = Volley.meta.projects
+
+      unless list && list.count > 0
+        Volley::Log.info "no projects found"
+        stop
+      end
+
+      project = args.descriptor.get.first
+      if project
+        project = args.descriptor.get.first
+        Volley::Log.warn "#{list[project.to_sym]}"
+      else
+        list.each do |k, v|
+          Volley::Log.warn "#{k} => #{v}"
+        end
+      end
+    end
+  end
+
+  plan :published, :remote => false do
+    default do
+      pub = Volley::Dsl.publisher
+      unless pub
+        Volley::Log.error "publisher must be configured"
+        stop
+      end
+
+      pub.list do |p, b, v, data|
+        Volley::Log.warn "#{p}@#{b}:#{v}"
       end
     end
   end
