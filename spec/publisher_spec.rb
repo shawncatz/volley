@@ -45,7 +45,7 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should be able to tell me the list of versions" do
-    expect(@pub.versions("spec", "trunk")).to match_array(%w{1 2 latest})
+    expect(@pub.versions("spec", "trunk")).to match_array(%w{1 2})
   end
 
   it "should be able to tell me the list of files" do

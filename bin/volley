@@ -10,8 +10,8 @@ DOC = <<-DOC
 Usage: volley [options] <plan> <descriptor> [argument]...
 
 <plan>
-  The plan to run.
-  reserved plan names: [versions, latest, list]
+  The plan to run. This can be just the plan name or the project:plan.
+  (will check in the reserved volley project for plan first)
 
 <descriptor>
   A descriptor should conform to the following format:
@@ -31,7 +31,8 @@ Usage: volley [options] <plan> <descriptor> [argument]...
 Options:
   -h --help           show this help message and exit
      --version        show version and exit
-  -d --debug          show debug output, change log level to debug
+  -d --debug          change log level to debug
+  -q --quiet          change log level to warn (generally this means no output)
   -c --config FILE    load additional Volleyfile [default: ~/.Volleyfile]
   -p --primary FILE   load primary Volleyfile [default: ./Volleyfile]
   -F --force          force operations (redeploy version, republish artifact)
@@ -50,6 +51,7 @@ module Volley
       STDOUT.sync = true
       options     = Docopt(DOC, Volley::Version::STRING)
       debug       = options[:debug]
+      quiet       = options[:quiet]
       config      = options[:config]
       primary     = options[:primary]
       fork        = options[:fork]
@@ -63,9 +65,15 @@ module Volley
       Volley::Dsl::VolleyFile.load(config, :optional => true)
       Volley::Dsl::VolleyFile.load(primary, :primary => true) if File.file?(primary)
 
-      Volley::Log.add(level.to_sym, log)
-      Volley::Log.console_debug if debug
       Volley.config.debug = debug
+      Volley.config.quiet = quiet
+
+      Volley::Log.add(level.to_sym, log)
+      if debug
+        Volley::Log.console_debug
+      elsif quiet
+        Volley::Log.console_quiet
+      end
 
       kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
       pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
@@ -74,8 +82,9 @@ module Volley
       desc = pos.shift
 
       raise "must specify plan" unless plan
+      if plan =~ /\:/
 
-      if Volley::Dsl.project(:volley).plan?(plan)
+      elsif Volley::Dsl.project(:volley).plan?(plan)
         # the plan is reserved
         plan = "volley:#{plan}"
       else
@@ -116,14 +125,10 @@ module Volley
     rescue Interrupt
       Volley::Log.info "interrupted"
     rescue SystemExit
-      Volley::Log.info "exited"
+      Volley::Log.debug "exited"
     rescue => e
       Volley::Log.error "error: #{e.message} at #{e.backtrace.first}"
-      #if debug
-        Volley::Log.error e
-      #else
-      #  Volley::Log.debug e
-      #end
+      Volley::Log.debug e
     end
   end
 end

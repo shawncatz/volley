@@ -18,7 +18,7 @@ module Volley
       def versions(pr, br)
         Dir["#@directory/#{pr}/#{br}/*"].map do |e|
           e.gsub(/#@directory\/#{pr}\/#{br}\//,"")
-        end
+        end.reject {|e| e == "latest" || e == ""}
       end
 
       def exists?(project, branch, version)
@@ -31,6 +31,20 @@ module Volley
         Dir["#{d}/*"].map do |e|
           e.gsub("#{d}/","")
         end
+      end
+
+      def version_data(project, branch, version)
+        pr    = project.to_s
+        br    = branch.to_s
+        vr    = version.to_s
+        list  = Dir["#@directory/#{project}/#{branch}/#{version}/*"]
+        files = contents(project, branch, version)
+        time  = list.map { |e| File.mtime(e) }.sort.uniq.last
+        {
+            :contents  => files,
+            :timestamp => time,
+            :latest => (latest_version(project, branch) == vr)
+        }
       end
 
       def delete_project(project)
