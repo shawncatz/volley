@@ -12,10 +12,38 @@ module Volley
         @encrypted = optional(:encrypted, false)
         @local     = optional(:local, Volley.config.directory)
         @loglevel  = @debug ? :info : :debug
-        @latest    = {}
+        @latest    = { }
         @force     = false
 
         load_configuration
+      end
+
+      def list(&block)
+        hash     = { }
+        unsorted = { }
+        plist    = projects
+        plist.each do |p|
+          hash[p] = { }
+          blist   = branches(p)
+          blist.each do |b|
+            hash[p][b] = { }
+            vlist      = versions(p, b)
+            vlist.each do |v|
+              d = version_data(p, b, v)
+              hash[p][b][v] = d
+              unsorted["#{p}@#{b}:#{v}"] = d if d[:contents] && d[:contents].count > 0
+            end
+          end
+        end
+
+        sorted = unsorted.sort_by { |k, v| v[:timestamp] }.reverse
+        sorted.each do |k, v|
+          d = Volley::Descriptor.new(k)
+          next unless d
+          yield d.project, d.branch, d.version, v
+        end
+
+        hash
       end
 
       def projects
@@ -43,7 +71,7 @@ module Volley
       end
 
       def latest(project, branch)
-        @latest["#{project}/#{branch}"] ||= pull_file(dir(project,branch), "latest")
+        @latest["#{project}/#{branch}"] ||= pull_file(dir(project, branch), "latest")
       end
 
       def latest_version(project, branch)
@@ -51,10 +79,10 @@ module Volley
       end
 
       def volleyfile(project, branch, version="latest")
-        d = dir(project,branch,version)
+        d        = dir(project, branch, version)
         contents = pull_file(d, "Volleyfile")
 
-        dest     = "#@local/Volleyfile-#{Time.now.to_i}-#{$$}"
+        dest = "#@local/Volleyfile-#{Time.now.to_i}-#{$$}"
         raise "File #{dest} already exists" if File.exists?(dest)
 
         log "saving Volleyfile: #{dest}"
@@ -84,7 +112,7 @@ module Volley
       end
 
       def pull(project, branch, version="latest")
-        dir = dir(project, branch, version)
+        dir  = dir(project, branch, version)
         file = remote_file(branch, version)
 
         log "vv #{me}#pull"
@@ -120,7 +148,6 @@ module Volley
         n = name.to_sym
         Volley.config.send(n)
       end
-
 
 
       def push_file(dir, name, contents)

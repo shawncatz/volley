@@ -63,7 +63,7 @@ module Volley
           run_actions
         rescue => e
           puts "plan#call error: #{e.message} at #{e.backtrace.first}"
-          ap self
+          ap self if Volley.config.debug
           raise e
         end
         [branch, version].join(":")
