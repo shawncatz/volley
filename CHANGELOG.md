@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.5:
+* action#stop should delegate to plan#stop
+
 ## v0.1.4:
 * fix problem with expand path throwing errors when HOME environment variable is not set
 * fix problem with volley:meta when the meta file doesn't exist
