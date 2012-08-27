@@ -1,8 +1,8 @@
-#require "awesome_print"
 require "ostruct"
 require "active_support/all"
 
 require "volley/version"
+require "volley/exceptions"
 require "volley/log"
 require "volley/publisher/base"
 require "volley/publisher/exceptions"

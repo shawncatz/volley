@@ -22,7 +22,7 @@ project :volley do
 
   plan :latest do
     default do
-      (project,branch,_) = args.descriptor.get
+      (project, branch, _) = args.descriptor.get
       raise "project and branch must be specified" unless project && branch
 
       pub = Volley::Dsl.publisher
@@ -40,7 +40,7 @@ project :volley do
       pub  = Volley::Dsl.publisher
       data = []
       if args.all
-        data = pub.all.keys.reject {|e| e =~ /latest$/}
+        data = pub.all.keys.reject { |e| e =~ /latest$/ }
         data.each { |k, v| puts "%2s %s" % [v, k] }
       else
         if project
@@ -72,7 +72,6 @@ project :volley do
   plan :meta, :remote => false do
     default do
       list = Volley.meta.projects
-
       unless list && list.count > 0
         Volley::Log.info "no projects found"
         stop
@@ -93,6 +92,7 @@ project :volley do
   plan :published, :remote => false do
     default do
       pub = Volley::Dsl.publisher
+
       unless pub
         Volley::Log.error "publisher must be configured"
         stop

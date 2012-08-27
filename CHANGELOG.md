@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.6:
+* add better support for plan#stop
+* fix bugs in volley plans
+* remove dependencies and references to awesome_print
+
 ## v0.1.5:
 * action#stop should delegate to plan#stop
 
