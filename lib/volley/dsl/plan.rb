@@ -61,9 +61,10 @@ module Volley
 
         begin
           run_actions
+        rescue ExecutionStopped => e
+          Volley::Log.debug "stopping execution at #{e.backtrace.first}"
         rescue => e
           puts "plan#call error: #{e.message} at #{e.backtrace.first}"
-          ap self if Volley.config.debug
           raise e
         end
         [branch, version].join(":")
@@ -94,6 +95,7 @@ module Volley
 
       def stop
         @stopped = true
+        raise ExecutionStopped, "stopped"
       end
 
       def stopped?

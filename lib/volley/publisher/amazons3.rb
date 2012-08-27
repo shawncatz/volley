@@ -151,7 +151,6 @@ module Volley
             #hash[:latest]["#{pr}/#{br}"] ||= latest(pr, br)
             hash[:all][v] = hash["latest"] == v
           end
-          #ap hash
           hash
         end
       end

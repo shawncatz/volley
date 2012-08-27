@@ -3,7 +3,6 @@
 require 'rubygems'
 require 'docopt'
 require 'volley'
-require 'awesome_print'
 require 'daemons'
 
 DOC = <<-DOC
