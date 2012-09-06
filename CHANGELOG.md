@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.8:
+* more docopt fixes
+
 ## v0.1.7:
 * handle docopt exit for --version
 * update to use newest docopt version
