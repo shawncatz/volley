@@ -4,9 +4,13 @@ require 'rubygems'
 require 'docopt'
 require 'volley'
 require 'daemons'
+require 'awesome_print'
 
 DOC = <<-DOC
-Usage: volley [options] <plan> <descriptor> [argument]...
+Usage:
+  volley [options] PLAN
+  volley [options] PLAN DESCRIPTOR
+  volley [options] PLAN DESCRIPTOR [ARGUMENT ...]
 
 <plan>
   The plan to run. This can be just the plan name or the project:plan.
@@ -49,14 +53,15 @@ module Volley
     def run(argv)
       STDOUT.sync = true
       options     = Docopt::docopt(DOC, :version => Volley::Version::STRING)
-      debug       = options[:debug]
-      quiet       = options[:quiet]
-      config      = options[:config]
-      primary     = options[:primary]
-      fork        = options[:fork]
-      log         = options[:log]
-      level       = options[:level]
-      force       = options[:force]
+      ap options
+      debug       = options["--debug"]
+      quiet       = options["--quiet"]
+      config      = options["--config"]
+      primary     = options["--primary"]
+      fork        = options["--fork"]
+      log         = options["--log"]
+      level       = options["--level"]
+      force       = options["--force"]
       args        = { }
 
 
@@ -73,6 +78,8 @@ module Volley
       elsif quiet
         Volley::Log.console_quiet
       end
+
+      ap argv
 
       kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
       pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
@@ -126,7 +133,7 @@ module Volley
     rescue SystemExit
       Volley::Log.debug "exited"
     rescue Docopt::Exit => e
-      Volley::Log.info "volley version: #{e.message}"
+      Volley::Log.info e.message
     rescue => e
       Volley::Log.error "error: #{e} #{e.message} at #{e.backtrace.first}"
       Volley::Log.debug e
