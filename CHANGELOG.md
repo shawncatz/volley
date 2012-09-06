@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.7:
+* handle docopt exit for --version
+* update to use newest docopt version
+
 ## v0.1.6:
 * add better support for plan#stop
 * fix bugs in volley plans
