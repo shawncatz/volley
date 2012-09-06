@@ -4,6 +4,9 @@ module Volley
     class Action
       attr_reader :plan
 
+      delegate :project, :args, :files, :file, :attributes, :log, :arguments, :argv, :branch, :version, :action, :volley, :stop, :source,
+               :to => :plan
+
       def initialize(name, options={}, &block)
         @name = name.to_sym
         @stage = options.delete(:stage)
@@ -20,9 +23,6 @@ module Volley
         Volley::Log.debug "## #{project.name}:#{@plan.name}[#{@stage}]##@name"
         self.instance_eval &@block if @block
       end
-
-      delegate :project, :args, :files, :file, :attributes, :log, :arguments, :argv, :branch, :version, :action, :volley, :stop,
-               :to => :plan
 
       def command(cmd)
         plan.shellout(cmd)

@@ -53,7 +53,6 @@ module Volley
     def run(argv)
       STDOUT.sync = true
       options     = Docopt::docopt(DOC, :version => Volley::Version::STRING)
-      ap options
       debug       = options["--debug"]
       quiet       = options["--quiet"]
       config      = options["--config"]
@@ -63,7 +62,6 @@ module Volley
       level       = options["--level"]
       force       = options["--force"]
       args        = { }
-
 
       Volley::Dsl::VolleyFile.init
       Volley::Dsl::VolleyFile.load(config, :optional => true)

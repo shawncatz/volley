@@ -9,13 +9,6 @@ module Volley
         }.merge(opt)
       end
 
-      def data
-        @data ||= begin
-          update if @options[:update]
-          YAML::load(%x{svn info})
-        end
-      end
-
       def branch
         @branch ||= begin
           if data["URL"] =~ /\/trunk/
@@ -39,6 +32,15 @@ module Volley
         @options.delete(:update)
         up = %x{svn update}
         @data = nil
+      end
+
+      private
+
+      def data
+        @data ||= begin
+          update if @options[:update]
+          YAML::load(%x{svn info})
+        end
       end
     end
   end
