@@ -48,7 +48,7 @@ module Volley
 
     def run(argv)
       STDOUT.sync = true
-      options     = Docopt(DOC, Volley::Version::STRING)
+      options     = Docopt::docopt(DOC, :version => Volley::Version::STRING)
       debug       = options[:debug]
       quiet       = options[:quiet]
       config      = options[:config]
