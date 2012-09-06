@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.9:
+* remove dependency on awesome_print and debug statements. fail me.
+* more docopt fixes
+* handle docopt exit for --version
+* update to use newest docopt version
+* working on getting 'auto' source working
+
 ## v0.1.8:
 * more docopt fixes
 
