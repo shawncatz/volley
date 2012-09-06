@@ -36,7 +36,6 @@ module Volley
 
       attr_reader :plans
       attr_reader :name
-      attr_reader :source
 
       def initialize(name)
         @name = name
@@ -68,10 +67,33 @@ module Volley
       end
 
       def scm(name, o={}, &block)
+        options = {
+            :required => true,
+        }.merge(o)
         n = name.to_s
+
+        if n == "auto"
+          n = autoscm
+        end
+
+        if n.nil? || n.blank?
+          puts "N not set (project: #@name)"
+          if options[:required]
+            raise "could not automatically determine SCM"
+          else
+            return
+          end
+        end
+
         require "volley/scm/#{n}"
         klass = "Volley::Scm::#{n.camelize}".constantize
-        @source = klass.new(o)
+        @source = klass.new(options)
+      rescue => e
+        raise "unable to load SCM provider: #{n} #{e.message}"
+      end
+
+      def source
+        @source or raise "SCM not configured"
       end
 
       #def encrypt(tf, o={})
@@ -97,6 +119,14 @@ module Volley
       #  }.merge(o)
       #  config.pack = OpenStruct.new(options)
       #end
+
+      private
+
+      def autoscm
+        return "git" if File.directory?(File.expand_path("./.git"))
+        return "subversion" if File.directory?(File.expand_path("./.svn"))
+        nil
+      end
     end
   end
 end

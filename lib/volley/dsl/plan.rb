@@ -10,6 +10,9 @@ module Volley
       attr_reader :arguments
       attr_reader :attributes
 
+      delegate :source,
+          :to => :project
+
       def initialize(name, o={ }, &block)
         options     = {
             :name      => name,
@@ -109,10 +112,6 @@ module Volley
 
       def args
         @args = OpenStruct.new(@arguments.inject({ }) { |h, e| (k, v)=e; h[k] = v.value; h })
-      end
-
-      def source
-        @project.source or raise "SCM not configured"
       end
 
       def remote(tf)
