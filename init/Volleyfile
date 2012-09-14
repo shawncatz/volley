@@ -1,1 +1,24 @@
-# TODO: write this
+
+project :myproject do
+  plan :publish do
+    action :build do
+      # run a build command
+    end
+    push do
+      # push is a special action.
+      # the push action will automatically create a single artifact for you
+      # the last statement of the push action should be a list of files that
+      # you want included in the artifact.
+    end
+  end
+
+  plan :deploy do
+    pull do |dir|
+      # pull is a special action
+      # this action will be called once the artifact is downloaded and unpacked
+      # on the remote server.
+      # 'dir' is set to the directory containing the unpacked contents of the
+      # artifact.
+    end
+  end
+end
