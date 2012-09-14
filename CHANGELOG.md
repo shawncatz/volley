@@ -34,6 +34,9 @@
 * bug fixes, meta and published plan work
 
 ## v0.1.2:
+* remove debug message
+* fix depcrated config for Yell
+* merge problem
 * fix bug with argument handling, related to docopt changes
 * documentation
 * remove dependency on awesome_print and debug statements. fail me.
@@ -50,6 +53,14 @@
 * add -q --quiet option to CLI (bumps log level to warn)
 * add volley:published plan, show all published artifacts (used by jenkins for selecting version to deploy)
 * add version_data method to publisher, primarily to have access to modified time for sorting
+
+## v0.1.11:
+* remove debug message
+* fix depcrated config for Yell
+* merge problem
+* more docopt fixes
+* handle docopt exit for --version
+* update to use newest docopt version
 
 ## v0.1.10:
 * fix bug with argument handling, related to docopt changes
