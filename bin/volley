@@ -11,25 +11,6 @@ Usage:
   volley [options] PLAN DESCRIPTOR
   volley [options] PLAN DESCRIPTOR [ARGUMENT ...]
 
-<plan>
-  The plan to run. This can be just the plan name or the project:plan.
-  (will check in the reserved volley project for plan first)
-
-<descriptor>
-  A descriptor should conform to the following format:
-    <project>[@<branch>[:<version>]]
-
-  project:  the project name.
-  branch:   the branch name.
-            Defaults to the branch currently in use,
-            must be specified for remote mode.
-  version:  the version (revision)
-            Defaults to the current revision
-            In remote mode, defaults to "latest"
-
-<argument>
-  A list of key=value pairs
-
 Options:
   -h --help           show this help message and exit
      --version        show version and exit
@@ -60,7 +41,9 @@ module Volley
       log         = options["--log"]
       level       = options["--level"]
       force       = options["--force"]
-      args        = { }
+      plan        = options["PLAN"]
+      desc        = options["DESCRIPTOR"]
+      kvs         = options["ARGUMENT"]
 
       Volley::Dsl::VolleyFile.init
       Volley::Dsl::VolleyFile.load(config, :optional => true)
@@ -76,11 +59,10 @@ module Volley
         Volley::Log.console_quiet
       end
 
-      kvs = argv.select { |e| e.match(/(\w+)\=(\w+)/) }
-      pos = argv.reject { |e| e.match(/(\w+)\=(\w+)/) }
-
-      plan = pos.shift
-      desc = pos.shift
+      if desc && !Volley::Descriptor.valid?(desc)
+        kvs.unshift(desc)
+        desc = nil
+      end
 
       raise "must specify plan" unless plan
       if plan =~ /\:/
@@ -102,7 +84,6 @@ module Volley
         Volley::Log.debug "## OPTIONS ##"
         Volley::Log.debug "plan:       #{plan}"
         Volley::Log.debug "descriptor: #{desc}"
-        Volley::Log.debug "positional: #{pos.join(",")}"
         Volley::Log.debug "key:value:  #{kvs.join(",")}"
       end
 

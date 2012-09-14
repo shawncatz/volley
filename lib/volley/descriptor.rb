@@ -29,5 +29,14 @@ module Volley
     def to_s
       "#@project@#@branch:#@version"
     end
+
+    class << self
+      def valid?(desc)
+        return false if desc.nil? || desc.blank?
+        list = desc.split(/[\@\:\.\/\\\-]/)
+        return false if (list.count < 2 || list.count > 3)
+        true
+      end
+    end
   end
 end
