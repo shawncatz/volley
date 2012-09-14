@@ -18,7 +18,7 @@ module Volley
           FileUtils.mkdir_p(File.dirname(dest))
           @loggers[dest] = Yell.new(:datefile, dest,
                                     :level => level, :format => format,
-                                    :keep  => 7, :symlink_original_filename => true)
+                                    :keep  => 7, :symlink => true)
         end
       end
 
