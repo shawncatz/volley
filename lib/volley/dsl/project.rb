@@ -77,7 +77,6 @@ module Volley
         end
 
         if n.nil? || n.blank?
-          puts "N not set (project: #@name)"
           if options[:required]
             raise "could not automatically determine SCM"
           else
