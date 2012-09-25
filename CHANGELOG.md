@@ -34,6 +34,7 @@
 * bug fixes, meta and published plan work
 
 ## v0.1.2:
+* awesome_print dependency, since I keep using it and leaving it in
 * remove debug message
 * fix depcrated config for Yell
 * merge problem
@@ -53,6 +54,9 @@
 * add -q --quiet option to CLI (bumps log level to warn)
 * add volley:published plan, show all published artifacts (used by jenkins for selecting version to deploy)
 * add version_data method to publisher, primarily to have access to modified time for sorting
+
+## v0.1.12:
+* awesome_print dependency, since I keep using it and leaving it in
 
 ## v0.1.11:
 * remove debug message
