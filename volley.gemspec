@@ -22,4 +22,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency "yell"
   gem.add_dependency "docopt", '0.5.0'
   gem.add_dependency "daemons"
+  gem.add_dependency "awesome_print"
 end
