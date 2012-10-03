@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.1.13:
+* exit with errors for unknown exceptions
+
+## v0.1.12:
+* awesome_print dependency, since I keep using it and leaving it in
+
+## v0.1.11:
+* remove debug message
+* fix depcrated config for Yell
+* merge problem
+* more docopt fixes
+* handle docopt exit for --version
+* update to use newest docopt version
+
+## v0.1.10:
+* fix bug with argument handling, related to docopt changes
+* documentation
+
 ## v0.1.9:
 * remove dependency on awesome_print and debug statements. fail me.
 * more docopt fixes
@@ -34,55 +52,6 @@
 * bug fixes, meta and published plan work
 
 ## v0.1.2:
-* awesome_print dependency, since I keep using it and leaving it in
-* remove debug message
-* fix depcrated config for Yell
-* merge problem
-* fix bug with argument handling, related to docopt changes
-* documentation
-* remove dependency on awesome_print and debug statements. fail me.
-* more docopt fixes
-* handle docopt exit for --version
-* update to use newest docopt version
-* working on getting 'auto' source working
-* add better support for plan#stop
-* fix bugs in volley plans
-* remove dependencies and references to awesome_print
-* action#stop should delegate to plan#stop
-* fix problem with expand path throwing errors when HOME environment variable is not set
-* fix problem with volley:meta when the meta file doesn't exist
-* add -q --quiet option to CLI (bumps log level to warn)
-* add volley:published plan, show all published artifacts (used by jenkins for selecting version to deploy)
-* add version_data method to publisher, primarily to have access to modified time for sorting
-
-## v0.1.12:
-* awesome_print dependency, since I keep using it and leaving it in
-
-## v0.1.11:
-* remove debug message
-* fix depcrated config for Yell
-* merge problem
-* more docopt fixes
-* handle docopt exit for --version
-* update to use newest docopt version
-
-## v0.1.10:
-* fix bug with argument handling, related to docopt changes
-* documentation
-* remove dependency on awesome_print and debug statements. fail me.
-* more docopt fixes
-* handle docopt exit for --version
-* update to use newest docopt version
-* working on getting 'auto' source working
-* add better support for plan#stop
-* fix bugs in volley plans
-* remove dependencies and references to awesome_print
-* action#stop should delegate to plan#stop
-* fix problem with expand path throwing errors when HOME environment variable is not set
-* fix problem with volley:meta when the meta file doesn't exist
-* add -q --quiet option to CLI (bumps log level to warn)
-* add volley:published plan, show all published artifacts (used by jenkins for selecting version to deploy)
-* add version_data method to publisher, primarily to have access to modified time for sorting
 * add code to generate changelog
 * attempting to publish a duplicate artifact shouldn't throw an error
 * properly support force=true argument
