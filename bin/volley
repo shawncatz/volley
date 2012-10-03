@@ -114,6 +114,7 @@ module Volley
     rescue => e
       Volley::Log.error "error: #{e} #{e.message} at #{e.backtrace.first}"
       Volley::Log.debug e
+      exit 1
     end
   end
 end
