@@ -49,7 +49,9 @@ def changelog(last=nil, single=false)
   puts "# Changelog"
   puts
 
-  list.lines.reject{|e| e =~ /\.alpha/}.reverse_each do |t|
+  ordered = list.lines.sort_by {|e| (a,b,c) = e.gsub(/^v/,"").split("."); "%3d%3d%3d" % [a, b, c]}
+
+  ordered.reject{|e| (a,b,c,d) = e.split("."); !d.nil?}.reverse_each do |t|
     tag = t.chomp
 
     if last
