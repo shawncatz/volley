@@ -40,7 +40,7 @@ module Volley
       def valid?(desc)
         return false if desc.nil? || desc.blank?
         list = desc.split(/[\@\:\.\/\\\-]/)
-        return false if (list.count < 2 || list.count > 3)
+        return false if (list.count < 2 || list.count > 4)
         true
       end
     end

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.15:
+* missed in previous descriptor change. Tests now check valid? and parsing
+
 ## v0.1.14:
 * update descriptor to support project@branch:5005-1
 
