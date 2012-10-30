@@ -9,10 +9,16 @@ module Volley
       }.merge(options)
 
       if desc
+        @project = nil
+        @branch = nil
+        @version = nil
+
         list = desc.split(/[\@\:\.\/\\\-]/)
-        raise "error parsing descriptor: #{desc}" if (list.count < 2 || list.count > 3) && !@options[:partial]
-        (@project, @branch, @version) = list
+        raise "error parsing descriptor: #{desc}" if (list.count < 2 || list.count > 4) && !@options[:partial]
+
+        (@project, @branch, @version, @after) = list
         @version ||= "latest"
+        @version = "#@version-#@after" if @version != "latest" && @after
 
         raise "error parsing descriptor: #{desc}" unless (@project && @branch && @version) || @options[:partial]
       end
