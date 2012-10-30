@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.14:
+* update descriptor to support project@branch:5005-1
+
 ## v0.1.13:
 * exit with errors for unknown exceptions
 
