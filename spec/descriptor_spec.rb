@@ -7,6 +7,8 @@ describe Volley::Descriptor do
       %w{spec-trunk-1 spec trunk 1},
       %w{spec:trunk:1 spec trunk 1},
       %w{spec\trunk\1 spec trunk 1},
+      %w{spec@trunk:1-1 spec trunk 1-1},
+      %w{spec@trunk:1:1 spec trunk 1-1},
       %w{spec@trunk spec trunk latest},
       %w{spec/trunk spec trunk latest},
       %w{spec:trunk spec trunk latest},
@@ -28,7 +30,6 @@ describe Volley::Descriptor do
     spec
     spec:
     spec~trunk
-    spec:trunk:1:blarg
   }.each do |desc|
     it "should not handle format: '#{desc}'" do
       expect { Volley::Descriptor.new(desc) }.to raise_error(StandardError)
