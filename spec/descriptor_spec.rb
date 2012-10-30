@@ -16,6 +16,7 @@ describe Volley::Descriptor do
   ].each do |a|
     (desc, project, branch, version) = a
     it "should handle format: '#{desc}'" do
+      expect(Volley::Descriptor.valid?(desc)).to be(true)
       d = Volley::Descriptor.new(desc)
       expect(d).not_to be(nil)
       expect(d.project).to eq(project)
