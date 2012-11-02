@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.16:
+* only use source to determine version when publishing
+
 ## v0.1.15:
 * missed in previous descriptor change. Tests now check valid? and parsing
 
