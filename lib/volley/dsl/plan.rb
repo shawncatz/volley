@@ -51,7 +51,7 @@ module Volley
       end
 
       def call(options={ })
-        @mode = @name.to_s =~ /deploy/i ? :deploy : :publish
+        @mode = @name.to_s =~ /publish/i ? :publish : :deploy
         Volley::Log.debug "## #{@project.name}:#@name  (#@mode)"
         @origargs = options[:args]
         data      = @origargs
