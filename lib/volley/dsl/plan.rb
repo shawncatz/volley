@@ -145,7 +145,7 @@ module Volley
             v
           end
         end
-        raise Volley::VersionFailure unless v && v == "latest"
+        raise Volley::VersionFailure if v.nil? || v == "latest"
         v
       end
 
