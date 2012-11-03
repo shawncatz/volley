@@ -25,11 +25,6 @@ module Volley
           (project, branch, version) = desc.get
           Volley.process("#{runpr}:#{plan}", "#{runpr}@#{branch}:#{version}", :args => args)
         end
-
-        #@plan.action "volley-#@run" do
-        #  puts "volley run #@run #@desc"
-        #  Volley.process(@run, @desc.to_s, :args => args)
-        #end
       end
     end
   end

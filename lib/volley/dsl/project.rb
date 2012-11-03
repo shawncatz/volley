@@ -92,7 +92,7 @@ module Volley
       end
 
       def source
-        @source or raise "SCM not configured"
+        @source or raise Volley::ScmNotConfigured, "SCM not configured"
       end
 
       #def encrypt(tf, o={})

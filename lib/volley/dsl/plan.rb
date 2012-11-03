@@ -130,9 +130,14 @@ module Volley
         if v.nil? || v == "latest"
           v = begin
             if deploying?
-              Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch) || v
+              Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
             elsif publishing?
-              source.revision || v
+              begin
+                source.revision
+              rescue Volley::ScmNotConfigured => e
+                Volley::Log.debug "failed to get version from source, trying publisher"
+                Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
+              end
             end
           rescue => e
             Volley::Log.debug "failed to get version? #{v.inspect} : #{e.message}"
@@ -140,6 +145,7 @@ module Volley
             v
           end
         end
+        raise Volley::VersionFailure unless v && v != "latest"
         v
       end
 
