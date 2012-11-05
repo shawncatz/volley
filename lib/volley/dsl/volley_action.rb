@@ -23,7 +23,7 @@ module Volley
           plan = @run
           (runpr, plan) = plan.split(/\:/) if @run =~ /\:/
           (project, branch, version) = desc.get
-          Volley.process("#{runpr}:#{plan}", "#{runpr}@#{branch}:#{version}", :args => args)
+          Volley.process("#{runpr}:#{plan}", "#{project}@#{branch}:#{version}", args.marshal_dump)
         end
       end
     end
