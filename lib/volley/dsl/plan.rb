@@ -51,7 +51,7 @@ module Volley
       end
 
       def call(options={ })
-        @mode = @name.to_s =~ /publish/i ? :publish : :deploy
+        @mode = @name.to_s =~ /deploy/i ? :deploy : :publish
         Volley::Log.debug "## #{@project.name}:#@name  (#@mode)"
         @origargs = options[:args]
         data      = @origargs
@@ -130,9 +130,14 @@ module Volley
         if v.nil? || v == "latest"
           v = begin
             if deploying?
-              Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch) || v
+              Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
             elsif publishing?
-              source.revision || v
+              begin
+                source.revision
+              rescue Volley::ScmNotConfigured => e
+                Volley::Log.debug "failed to get version from source, trying publisher"
+                Volley::Dsl.publisher.latest_version(args.descriptor.project, args.descriptor.branch)
+              end
             end
           rescue => e
             Volley::Log.debug "failed to get version? #{v.inspect} : #{e.message}"

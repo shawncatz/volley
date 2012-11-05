@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.17:
+* fix problem with passing arguments through volley action
+* unable to get version is not a fatal error in most cases
+* tweak logic to make it easier to understand (and match earlier logic)
+* fix typo
+* fix for determining latest version: if source isn't configured, will fall back to trying publisher.
+* Revert "only use source to determine version when publishing"
+
 ## v0.1.16:
 * only use source to determine version when publishing
 
