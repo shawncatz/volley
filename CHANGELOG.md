@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.18:
+* 'volley:exists' plan to check for artifact in publisher
+
 ## v0.1.17:
 * fix problem with passing arguments through volley action
 * unable to get version is not a fatal error in most cases
