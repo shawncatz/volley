@@ -15,7 +15,7 @@ project :volley do
       Volley::Log.info "SCM:"
       Volley::Log.info ".. branch: #{source.branch} revision: #{source.revision}" if source
       Volley::Log.info "Projects/Plans:"
-      Volley::Dsl::Project.projects.reject{|k, _| k==:volley}.each do |p, project|
+      Volley::Dsl::Project.projects.reject { |k, _| k==:volley }.each do |p, project|
         h = project.plans
         next unless h.count > 0
         h.keys.each do |pl|
@@ -116,6 +116,24 @@ project :volley do
 
       pub.list do |p, b, v, data|
         Volley::Log.warn "#{p}@#{b}:#{v}"
+      end
+    end
+  end
+
+  plan :exists, :remote => false do
+    default do
+      (project, branch, version) = args.descriptor.get
+      pub                        = Volley::Dsl.publisher
+      if project && branch && version != "latest"
+        if pub.exists?(project, branch, version)
+          Volley::Log.warn "#{args.descriptor} exists"
+        else
+          Volley::Log.warn "#{args.descriptor} does not exist"
+          raise "#{args.descriptor} does not exist"
+        end
+      else
+        Volley::Log.error "must specify full descriptor"
+        stop
       end
     end
   end
