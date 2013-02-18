@@ -52,6 +52,11 @@ project :volley do
       p = args.project
       pub = Volley::Dsl.publisher
       r = pub.latest_release(p)
+      list = pub.versions(p, "release")
+      list.each do |v|
+        f = pub.released_from(p, v) || "unknown" rescue "unknown"
+        puts "  #{v} <= #{f}"
+      end
 
       puts "latest '#{p}' release: #{r}"
     end
@@ -133,30 +138,14 @@ project :volley do
 
   plan :release do
     argument :version, required: true
-    localfile = nil
-    reldesc = nil
-    tmpdir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
     pub = Volley::Dsl.publisher
 
-    action :mktmp do
-      FileUtils.mkdir_p(tmpdir)
-      Dir.chdir(tmpdir)
-    end
-    action :download do
+    default do
       desc = args.descriptor
       to = args.version
-      reldesc = Descriptor.new("#{desc.project}@release:#{to}")
-      puts "#{desc} => #{reldesc}"
-      (p, b, v) = desc.get
-      localfile = pub.pull(p, b, v)
-      log "downloaded: #{localfile}"
-    end
-    action :release do
-      (p, b, v) = reldesc.get
-      pub.release(tmpdir, localfile, p, b, v)
-    end
-    action :cleanup do
-      FileUtils.remove_entry_secure(tmpdir)
+      old = desc.to_s
+      new = "#{desc.project}@release:#{to}"
+      pub.release(old, new)
     end
   end
 
