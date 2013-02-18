@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.19:
+* gemspec had hardcoded tag
+* add release functionality to publishers
+* remove puts call
+
 ## v0.1.18:
 * 'volley:exists' plan to check for artifact in publisher
 

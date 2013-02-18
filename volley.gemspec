@@ -13,14 +13,13 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "volley"
   gem.require_paths = ["lib"]
-  gem.version       = "#{Volley::Version::STRING}"
+  gem.version       = Volley::Version::STRING
 
   gem.add_dependency "clamp"
   gem.add_dependency "fog"
   gem.add_dependency "activesupport"
   gem.add_dependency "mixlib-shellout"
   gem.add_dependency "yell"
-  gem.add_dependency "docopt", '0.5.0'
+  gem.add_dependency "docopt"
   gem.add_dependency "daemons"
-  gem.add_dependency "awesome_print"
 end

@@ -78,6 +78,10 @@ module Volley
         latest(project, branch).split("/").last
       end
 
+      def latest_release(project)
+        pull_file(project, "latest_release")
+      end
+
       def volleyfile(project, branch, version="latest")
         d        = dir(project, branch, version)
         contents = pull_file(d, "Volleyfile")
@@ -119,6 +123,25 @@ module Volley
         pull_file(dir, file, "#@local/#{dir}")
 
         "#@local/#{dir}/#{file}"
+      end
+
+      def release(tmpdir, local, p, b, v)
+        Dir.chdir(tmpdir) do
+          packed = "#{b}-#{v}.tgz"
+          dest = dir(p, b, v)
+
+          system("tar xfz #{local}")
+
+          files = Dir["**"]
+
+          system("tar cfz #{packed} #{files.join(" ")}")
+          push_file(dest, packed, File.open(packed))
+          push_file(dest, "Volleyfile", File.open("Volleyfile")) if File.exists?("Volleyfile")
+          push_file(dir(p, b), "latest", "#{p}/#{b}/#{v}")
+          push_file(p, "latest_release", "#{p}/#{b}/#{v}")
+        end
+
+        true
       end
 
       protected

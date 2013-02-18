@@ -12,13 +12,13 @@ module Volley
       end
 
       def branches(pr)
-        Dir["#@directory/#{pr}/*"].map {|e| e.gsub(/#@directory\/#{pr}\//,"")}
+        Dir["#@directory/#{pr}/*"].map {|e| e.gsub(/#@directory\/#{pr}\//,"")}.reject {|e| ["latest_release"].include?(e)}
       end
 
       def versions(pr, br)
         Dir["#@directory/#{pr}/#{br}/*"].map do |e|
           e.gsub(/#@directory\/#{pr}\/#{br}\//,"")
-        end.reject {|e| e == "latest" || e == ""}
+        end.reject { |e| ["","latest","latest_release"].include?(e) }
       end
 
       def exists?(project, branch, version)

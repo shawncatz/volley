@@ -46,6 +46,17 @@ project :volley do
     end
   end
 
+  plan :released, remote: false do
+    argument :project, required: true
+    default do
+      p = args.project
+      pub = Volley::Dsl.publisher
+      r = pub.latest_release(p)
+
+      puts "latest '#{p}' release: #{r}"
+    end
+  end
+
   plan :versions, :remote => false do
     argument :all, :convert => :boolean, :default => false
     argument :output, :default => "list", :convert => :to_sym, :choices => ["json", "xml", "list"]
@@ -117,6 +128,45 @@ project :volley do
       pub.list do |p, b, v, data|
         Volley::Log.warn "#{p}@#{b}:#{v}"
       end
+    end
+  end
+
+  plan :release do
+    argument :version, required: true
+    localfile = nil
+    reldesc = nil
+    tmpdir = "/var/tmp/volley-%d-%d-%05d" % [Time.now.to_i, $$, rand(99999)]
+    pub = Volley::Dsl.publisher
+
+    action :mktmp do
+      FileUtils.mkdir_p(tmpdir)
+      Dir.chdir(tmpdir)
+    end
+    action :download do
+      desc = args.descriptor
+      to = args.version
+      reldesc = Descriptor.new("#{desc.project}@release:#{to}")
+      puts "#{desc} => #{reldesc}"
+      (p, b, v) = desc.get
+      localfile = pub.pull(p, b, v)
+      log "downloaded: #{localfile}"
+    end
+    action :release do
+      (p, b, v) = reldesc.get
+      pub.release(tmpdir, localfile, p, b, v)
+    end
+    action :cleanup do
+      FileUtils.remove_entry_secure(tmpdir)
+    end
+  end
+
+  plan :download do
+    default do
+      desc = args.descriptor
+      pub = Volley::Dsl.publisher
+      (p, b, v) = desc.get
+      f = pub.pull(p, b, v)
+      log "downloaded: #{f}"
     end
   end
 

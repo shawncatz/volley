@@ -13,7 +13,7 @@ module Volley
         @branch = nil
         @version = nil
 
-        list = desc.split(/[\@\:\.\/\\\-]/)
+        list = desc.split(/[\@\:\/\\\-]/)
         raise "error parsing descriptor: #{desc}" if (list.count < 2 || list.count > 4) && !@options[:partial]
 
         (@project, @branch, @version, @after) = list
