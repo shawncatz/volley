@@ -37,14 +37,8 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should be able to release an artifact" do
-    tmpdir = "#{Dir.pwd}/test/tmp"
-    FileUtils.mkdir_p(tmpdir)
-    Dir.chdir(tmpdir) do
-      local  = @pub.pull("spec", "trunk", "1")
-      expect(@pub.release(tmpdir, local, "spec", "release", "v1.0")).to be(true)
-      expect(@pub.versions("spec", "release")).to match_array(%w{v1.0})
-    end
-    FileUtils.remove_entry_secure(tmpdir)
+    expect(@pub.release("spec@trunk:1", "spec@release:v1.0")).to be(true)
+    expect(@pub.versions("spec", "release")).to match_array(%w{v1.0})
   end
 
   it "should be able to tell me the list of projects" do

@@ -3,7 +3,7 @@ module Volley
     class Base
       attr_accessor :force
 
-      def initialize(options={ })
+      def initialize(options={})
         @options = {
             :overwrite => false,
         }.merge(options)
@@ -12,24 +12,24 @@ module Volley
         @encrypted = optional(:encrypted, false)
         @local     = optional(:local, Volley.config.directory)
         @loglevel  = @debug ? :info : :debug
-        @latest    = { }
+        @latest    = {}
         @force     = false
 
         load_configuration
       end
 
       def list(&block)
-        hash     = { }
-        unsorted = { }
+        hash     = {}
+        unsorted = {}
         plist    = projects
         plist.each do |p|
-          hash[p] = { }
+          hash[p] = {}
           blist   = branches(p)
           blist.each do |b|
-            hash[p][b] = { }
+            hash[p][b] = {}
             vlist      = versions(p, b)
             vlist.each do |v|
-              d = version_data(p, b, v)
+              d             = version_data(p, b, v)
               hash[p][b][v] = d
               unsorted["#{p}@#{b}:#{v}"] = d if d[:contents] && d[:contents].count > 0
             end
@@ -82,6 +82,10 @@ module Volley
         pull_file(project, "latest_release")
       end
 
+      def released_from(project, version)
+        pull_file(dir(project, "release", version), "from")
+      end
+
       def volleyfile(project, branch, version="latest")
         d        = dir(project, branch, version)
         contents = pull_file(d, "Volleyfile")
@@ -125,24 +129,57 @@ module Volley
         "#@local/#{dir}/#{file}"
       end
 
-      def release(tmpdir, local, p, b, v)
-        Dir.chdir(tmpdir) do
-          packed = "#{b}-#{v}.tgz"
-          dest = dir(p, b, v)
+      def release(old, new)
+        odesc = Descriptor.new(old)
+        ndesc = Descriptor.new(new)
 
-          system("tar xfz #{local}")
+        Dir.mktmpdir("volley-#{$$}", "/var/tmp") do |tmpdir|
+          Dir.chdir(tmpdir) do
+            (op, ob, ov) = odesc.get
+            (p, b, v)    = ndesc.get
 
-          files = Dir["**"]
+            Volley::Log.debug "%% #{me}#release: #{odesc} => #{ndesc} (#{tmpdir})"
 
-          system("tar cfz #{packed} #{files.join(" ")}")
-          push_file(dest, packed, File.open(packed))
-          push_file(dest, "Volleyfile", File.open("Volleyfile")) if File.exists?("Volleyfile")
-          push_file(dir(p, b), "latest", "#{p}/#{b}/#{v}")
-          push_file(p, "latest_release", "#{p}/#{b}/#{v}")
+            packed       = "#{b}-#{v}.tgz"
+            dest         = dir(p, b, v)
+
+            local = pull(op, ob, ov)
+            system("tar xfz #{local}")
+
+            files = Dir["**"]
+            cmd = "tar cfz #{packed} #{files.join(" ")}"
+            #Volley::Log.debug "-- command: #{cmd}"
+            system(cmd)
+
+            push_file(dest, packed, File.open(packed))
+            push_file(dest, "Volleyfile", File.open("Volleyfile")) if File.exists?("Volleyfile")
+            push_file(dest, "from", "#{op}/#{ob}/#{ov}")
+            push_file(dir(p, b), "latest", "#{p}/#{b}/#{v}")
+            push_file(p, "latest_release", "#{p}/#{b}/#{v}")
+          end
         end
 
         true
       end
+
+      #def release(tmpdir, local, p, b, v)
+      #  Dir.chdir(tmpdir) do
+      #    packed = "#{b}-#{v}.tgz"
+      #    dest = dir(p, b, v)
+      #
+      #    system("tar xfz #{local}")
+      #
+      #    files = Dir["**"]
+      #
+      #    system("tar cfz #{packed} #{files.join(" ")}")
+      #    push_file(dest, packed, File.open(packed))
+      #    push_file(dest, "Volleyfile", File.open("Volleyfile")) if File.exists?("Volleyfile")
+      #    push_file(dir(p, b), "latest", "#{p}/#{b}/#{v}")
+      #    push_file(p, "latest_release", "#{p}/#{b}/#{v}")
+      #  end
+      #
+      #  true
+      #end
 
       protected
 
