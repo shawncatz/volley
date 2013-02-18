@@ -112,7 +112,7 @@ module Volley
     rescue Docopt::Exit => e
       Volley::Log.info e.message
     rescue => e
-      Volley::Log.error "error: #{e} #{e.message} at #{e.backtrace.first}"
+      Volley::Log.error "error: '#{e.message}' at #{e.backtrace.first}"
       Volley::Log.debug e
       exit 1
     end

@@ -67,7 +67,7 @@ module Volley
         rescue ExecutionStopped => e
           Volley::Log.debug "stopping execution at #{e.backtrace.first}"
         rescue => e
-          puts "plan#call error: #{e.message} at #{e.backtrace.first}"
+          Volley::Log.debug "plan#call error: #{e.message} at #{e.backtrace.first}"
           raise e
         end
         [branch, version].join(":")
