@@ -8,6 +8,9 @@ module Volley
         @stage = options.delete(:stage)
         @plan = options.delete(:plan)
         @options = {
+            project: nil,
+            branch: nil,
+            version: nil,
         }.merge(options)
         raise "stage instance must be set" unless @stage
         raise "plan instance must be set" unless @plan
@@ -104,7 +107,7 @@ module Volley
 
         @plan.action :push, :post do
           publisher = Volley::Dsl.publisher
-          publisher.push(project.name, branch, version, attributes.artifact)
+          publisher.push(options[:project] || project.name, options[:branch] || branch, options[:version] || version, attributes.artifact)
         end
       end
     end

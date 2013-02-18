@@ -31,6 +31,7 @@ describe Volley::Descriptor do
     spec
     spec:
     spec~trunk
+    spec.trunk.1
   }.each do |desc|
     it "should not handle format: '#{desc}'" do
       expect { Volley::Descriptor.new(desc) }.to raise_error(StandardError)

@@ -33,7 +33,18 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should fail to retrieve a missing artifact" do
-    expect{ @pub.pull("spec", "trunk", "15")}.to raise_error(Volley::Publisher::ArtifactMissing)
+    expect { @pub.pull("spec", "trunk", "15") }.to raise_error(Volley::Publisher::ArtifactMissing)
+  end
+
+  it "should be able to release an artifact" do
+    tmpdir = "#{Dir.pwd}/test/tmp"
+    FileUtils.mkdir_p(tmpdir)
+    Dir.chdir(tmpdir) do
+      local  = @pub.pull("spec", "trunk", "1")
+      expect(@pub.release(tmpdir, local, "spec", "release", "v1.0")).to be(true)
+      expect(@pub.versions("spec", "release")).to match_array(%w{v1.0})
+    end
+    FileUtils.remove_entry_secure(tmpdir)
   end
 
   it "should be able to tell me the list of projects" do
@@ -41,7 +52,7 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should be able to tell me the list of branches" do
-    expect(@pub.branches("spec")).to match_array(%w{trunk staging})
+    expect(@pub.branches("spec")).to match_array(%w{release trunk staging})
   end
 
   it "should be able to tell me the list of versions" do
@@ -49,14 +60,14 @@ shared_examples_for Volley::Publisher::Base do
   end
 
   it "should be able to tell me the list of files" do
-    expect(@pub.contents("spec","trunk","2")).to match_array(%w{trunk-1.tgz})
+    expect(@pub.contents("spec", "trunk", "2")).to match_array(%w{trunk-1.tgz})
   end
 
   it "should be able to get a remote volleyfile" do
     Dir.chdir("#{root}/test/project")
-    expect(@pub.push("spec","trunk","3","Volleyfile")).to eq(true)
+    expect(@pub.push("spec", "trunk", "3", "Volleyfile")).to eq(true)
     Dir.chdir(root)
-    expect(@pub.volleyfile("spec","trunk","3")).to match(/#@local\/Volleyfile-.*-.*/)
+    expect(@pub.volleyfile("spec", "trunk", "3")).to match(/#@local\/Volleyfile-.*-.*/)
   end
 
   it "should be able to tell me the latest of a project and branch" do
@@ -69,7 +80,7 @@ shared_examples_for Volley::Publisher::Base do
 
   it "should be able to force publish a duplicate artifact" do
     Dir.chdir("#{root}/test/")
-    o = @pub.force
+    o          = @pub.force
     @pub.force = true
     expect(@pub.push("spec", "trunk", "1", "./trunk-1.tgz")).to eq(true)
     @pub.force = o

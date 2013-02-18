@@ -22,7 +22,7 @@ module Volley
         pr = project.to_s
         r = files[:desc][pr].keys || [] rescue []
         Volley::Log.info "could not find #{pr}" unless r.count > 0
-        r
+        r.reject {|e| ["latest_release"].include?(e)}
       rescue => e
         Volley::Log.warn "error getting branch list from publisher: #{e.message}"
         []
@@ -33,7 +33,7 @@ module Volley
         br = branch.to_s
         r = files[:desc][pr][br].keys || [] rescue []
         Volley::Log.info "could not find #{pr}@#{br}" unless r.count > 0
-        r.reject { |e| e == "latest" || e == "" }
+        r.reject { |e| ["","latest","latest_release"].include?(e) }
       rescue => e
         Volley::Log.warn "error getting version list from publisher: #{e.message}"
         []
