@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.20:
+* better support for publisher#release and volley:released plan. should now be able to see which version a release is from
+
 ## v0.1.19:
 * gemspec had hardcoded tag
 * add release functionality to publishers
