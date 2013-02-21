@@ -1,6 +1,7 @@
 
 module Volley
   class Descriptor
+    REGEX = /[\@\:\/\\\-]/
     attr_reader :project, :branch, :version
 
     def initialize(desc="", options={})
@@ -13,7 +14,7 @@ module Volley
         @branch = nil
         @version = nil
 
-        list = desc.split(/[\@\:\/\\\-]/)
+        list = desc.split(REGEX)
         raise "error parsing descriptor: #{desc}" if (list.count < 2 || list.count > 4) && !@options[:partial]
 
         (@project, @branch, @version, @after) = list
@@ -39,7 +40,7 @@ module Volley
     class << self
       def valid?(desc)
         return false if desc.nil? || desc.blank?
-        list = desc.split(/[\@\:\.\/\\\-]/)
+        list = desc.split(REGEX)
         return false if (list.count < 2 || list.count > 4)
         true
       end
