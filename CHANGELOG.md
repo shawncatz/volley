@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.21:
+* use common regex for descriptor checks and processing
+
 ## v0.1.20:
 * better support for publisher#release and volley:released plan. should now be able to see which version a release is from
 
