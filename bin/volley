@@ -61,6 +61,7 @@ module Volley
       end
 
       if desc && !Volley::Descriptor.valid?(desc)
+        Volley::Log.debug "descriptor '#{desc}' unset or invalid"
         kvs.unshift(desc)
         desc = nil
       end
