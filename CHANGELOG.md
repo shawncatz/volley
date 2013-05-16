@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.22:
+* add support for deleting branches and versions
+* ruby version file
+
 ## v0.1.21:
 * use common regex for descriptor checks and processing
 

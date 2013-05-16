@@ -77,8 +77,26 @@ module Volley
 
       def delete_project(project)
         Volley::Log.info "delete_project #{project}"
+        delete_files("#{project}/")
+      end
+
+      def delete_branch(project, branch)
+        Volley::Log.info "delete_branch #{project} #{branch}"
+        delete_files("#{project}/#{branch}/")
+      end
+
+      def delete_version(project, branch, version)
+        Volley::Log.info "delete_version #{project} #{branch} #{version}"
+        delete_files("#{project}/#{branch}/#{version}/")
+      end
+
+      protected
+
+      def delete_files(pattern)
+        Volley::Log.info "delete_files #{pattern}"
         dir = @connection.directories.get(@bucket)
-        dir.files.select { |e| e.key =~ /^#{project}\// }.each do |f|
+        list = dir.files.map {|e| [e.key, e]}.select {|e| e.first =~ /^#{pattern}/}.map {|e| e.last}
+        list.each do |f|
           Volley::Log.info "- #{f.key}"
           f.destroy
         end
@@ -88,8 +106,6 @@ module Volley
         Volley::Log.debug e
         false
       end
-
-      protected
 
       def load_configuration
         @key    = requires(:aws_access_key_id)
