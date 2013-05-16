@@ -48,14 +48,26 @@ module Volley
       end
 
       def delete_project(project)
-        FileUtils.rm_rf("#@directory/#{project}")
+        delete_files("#{project}")
+      end
+
+      def delete_branch(project, branch)
+        delete_files("#{project}/#{branch}")
+      end
+
+      def delete_version(project, branch, version)
+        delete_files("#{project}/#{branch}/#{version}")
+      end
+
+      private
+
+      def delete_files(path)
+        FileUtils.rm_rf("#@directory/#{path}")
         true
       rescue => e
         Volley::Log.error "error deleting project: #{e.message} at #{e.backtrace.first}"
         false
       end
-
-      private
 
       def load_configuration
         @directory = requires(:directory)

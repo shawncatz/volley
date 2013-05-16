@@ -8,15 +8,12 @@ Volley::Log.console_disable
 
 shared_examples_for Volley::Publisher::Base do
   before(:all) do
-    @remote = "#{root}/test/publisher/remote"
-    @local  = "/opt/volley"
-    FileUtils.mkdir_p(@remote)
+    @local = "/opt/volley"
     FileUtils.mkdir_p(@local)
-    [@local, @remote].each { |d| %x{rm -rf #{d}/*} }
+    %x{rm -rf #@local/*}
   end
 
   after(:all) do
-    FileUtils.rm_rf(@remote)
     FileUtils.rm_rf(@local)
   end
 
@@ -74,11 +71,19 @@ shared_examples_for Volley::Publisher::Base do
 
   it "should be able to force publish a duplicate artifact" do
     Dir.chdir("#{root}/test/")
-    o          = @pub.force
+    o = @pub.force
     @pub.force = true
     expect(@pub.push("spec", "trunk", "1", "./trunk-1.tgz")).to eq(true)
     @pub.force = o
     Dir.chdir(root)
+  end
+
+  it "should be able to delete a version" do
+    expect(@pub.delete_version("spec", "trunk", "1")).to eq(true)
+  end
+
+  it "should be able to delete a branch" do
+    expect(@pub.delete_branch("spec", "trunk")).to eq(true)
   end
 
   it "should be able to delete a project" do
@@ -89,8 +94,18 @@ end
 describe Volley::Publisher::Local do
   it_behaves_like Volley::Publisher::Base
 
+  before(:all) do
+    @remote = "#{root}/test/publisher/remote"
+    FileUtils.mkdir_p(@remote)
+    %x{rm -rf #@remote/*}
+  end
+
   before(:each) do
     @pub = Volley::Publisher::Local.new(:directory => @remote)
+  end
+
+  after(:all) do
+    FileUtils.rm_rf(@remote)
   end
 end
 
@@ -98,7 +113,7 @@ describe Volley::Publisher::Amazons3 do
   it_behaves_like Volley::Publisher::Base
 
   before(:each) do
-    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id     => "AKIAIWUGNGSUZWW5XVCQ",
+    @pub = Volley::Publisher::Amazons3.new(:aws_access_key_id => "AKIAIWUGNGSUZWW5XVCQ",
                                            :aws_secret_access_key => "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",
                                            :bucket => "inqcloud-volley-test")
   end
