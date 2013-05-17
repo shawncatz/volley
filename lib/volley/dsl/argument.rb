@@ -75,10 +75,17 @@ module Volley
       #end
 
       def usage
+        return if (@name == :descriptor && !@required) || @name == :force
+        n = @name
         v = @choices || @convert || "string"
-        r = @required ? "*" : ""
-        d = @default ? "(#@default)" : ""
-        "#@name:#{v}#{r}#{d}"
+        d = @default ? " (#@default)" : ""
+        n = "#{n}=#{v}#{d}"
+        if required
+          n = "<#{n}>"
+        else
+          n = "[#{n}]"
+        end
+        n
       end
 
       def boolean(value)

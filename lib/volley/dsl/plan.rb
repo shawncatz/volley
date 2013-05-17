@@ -141,7 +141,7 @@ module Volley
             end
           rescue => e
             Volley::Log.debug "failed to get version? #{v.inspect} : #{e.message}"
-            Volley::Log.debug e
+            #Volley::Log.debug e
             v
           end
         end

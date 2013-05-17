@@ -15,7 +15,7 @@ project :volley do
       Volley::Log.info "SCM:"
       Volley::Log.info ".. branch: #{source.branch} revision: #{source.revision}" if source
       Volley::Log.info "Projects/Plans:"
-      Volley::Dsl::Project.projects.reject { |k, _| k==:volley }.each do |p, project|
+      Volley::Dsl::Project.projects.reject { |k, _| [:volley, :release, :project, :branch, :version].include?(k) }.each do |p, project|
         h = project.plans
         next unless h.count > 0
         h.keys.each do |pl|
@@ -28,10 +28,10 @@ project :volley do
   plan :list, :remote => false do
     default do
       Volley::Dsl::Project.projects.each do |p, project|
-        Volley::Log.info "project: #{p}"
         project.plans.each do |pl, plan|
-          Volley::Log.info ".. #{pl} #{plan.usage}"
+          Volley::Log.info "#{p}:#{pl} #{plan.usage}"
         end
+        Volley::Log.info ""
       end
     end
   end
@@ -69,7 +69,7 @@ project :volley do
     default do
       (project, branch, version) = args.descriptor.get
 
-      pub  = Volley::Dsl.publisher
+      pub = Volley::Dsl.publisher
       data = []
       if args.all
         data = pub.all.keys.reject { |e| e =~ /latest$/ }
@@ -162,7 +162,127 @@ project :volley do
   plan :exists, :remote => false do
     default do
       (project, branch, version) = args.descriptor.get
-      pub                        = Volley::Dsl.publisher
+      pub = Volley::Dsl.publisher
+      if project && branch && version != "latest"
+        if pub.exists?(project, branch, version)
+          Volley::Log.warn "#{args.descriptor} exists"
+        else
+          Volley::Log.warn "#{args.descriptor} does not exist"
+          raise "#{args.descriptor} does not exist"
+        end
+      else
+        Volley::Log.error "must specify full descriptor"
+        stop
+      end
+    end
+  end
+end
+
+project :release do
+  plan :create do
+    argument :version, required: true
+
+    default do
+      pub = Volley::Dsl.publisher
+      desc = args.descriptor
+      to = args.version
+      old = desc.to_s
+      new = "#{desc.project}@release:#{to}"
+      pub.release(old, new)
+    end
+  end
+
+  plan :list, remote: false do
+    argument :project, required: true
+    default do
+      p = args.project
+      pub = Volley::Dsl.publisher
+      r = pub.latest_release(p)
+      list = pub.versions(p, "release")
+      list.each do |v|
+        f = pub.released_from(p, v) || "unknown" rescue "unknown"
+        puts "  #{v} <= #{f}"
+      end
+
+      puts "latest '#{p}' release: #{r}"
+    end
+  end
+end
+
+project :project do
+  plan :list, remote: false do
+    default do
+      pub = Volley::Dsl.publisher
+      pub.projects.each do |p|
+        Volley::Log.warn p
+      end
+    end
+  end
+  plan :remove, remote: false do
+    argument :name, required: true
+    #argument :force, default: false, convert: :boolean
+    default do
+      pub = Volley::Dsl.publisher
+      if args.force
+        Volley::Log.debug "removing project: #{args.name}"
+        pub.delete_project(args.name)
+      else
+        Volley::Log.warn "this process cannot be undone, if you are sure, run the same command with -F"
+      end
+    end
+  end
+end
+
+project :branch do
+  plan :list, remote: false do
+    argument :project, required: true
+    default do
+      Volley::Dsl.publisher.branches(args.project).each do |b|
+        Volley::Log.warn "#{args.project}@#{b}"
+      end
+    end
+  end
+  plan :remove do
+    default do
+      pub = Volley::Dsl.publisher
+      p = args.descriptor.project
+      b = args.descriptor.branch
+      if args.force
+        Volley::Log.debug "removing branch: #{p}@#{b}"
+        pub.delete_branch(p, b)
+      else
+        Volley::Log.warn "this process cannot be undone, if you are sure, run the same command with -F"
+      end
+    end
+  end
+end
+
+project :version do
+  plan :list do
+    default do
+      p = args.descriptor.project
+      b = args.descriptor.branch
+      Volley::Dsl.publisher.versions(p, b).each do |v|
+        Volley::Log.warn "#{p}@#{b}:#{v}"
+      end
+    end
+  end
+  plan :remove do
+    default do
+      pub = Volley::Dsl.publisher
+      (p, b, v) = args.descriptor.get
+      if args.force
+        Volley::Log.debug "removing version: #{p}@#{b}:#{v}"
+        pub.delete_version(p, b, v)
+      else
+        Volley::Log.warn "this process cannot be undone, if you are sure, run the same command with -F"
+      end
+    end
+  end
+  plan :exists do
+    default do
+      (project, branch, version) = args.descriptor.get
+      pub = Volley::Dsl.publisher
       if project && branch && version != "latest"
         if pub.exists?(project, branch, version)
           Volley::Log.warn "#{args.descriptor} exists"
