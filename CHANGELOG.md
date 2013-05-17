@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.23:
+* fixes issues with project, branch and version deletion and cleans up some of the reserved plans
+
 ## v0.1.22:
 * add support for deleting branches and versions
 * ruby version file

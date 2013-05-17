@@ -76,28 +76,29 @@ module Volley
       end
 
       def delete_project(project)
-        Volley::Log.info "delete_project #{project}"
+        Volley::Log.debug "delete_project #{project}"
         delete_files("#{project}/")
       end
 
       def delete_branch(project, branch)
-        Volley::Log.info "delete_branch #{project} #{branch}"
+        Volley::Log.debug "delete_branch #{project} #{branch}"
         delete_files("#{project}/#{branch}/")
       end
 
       def delete_version(project, branch, version)
-        Volley::Log.info "delete_version #{project} #{branch} #{version}"
+        Volley::Log.debug "delete_version #{project} #{branch} #{version}"
         delete_files("#{project}/#{branch}/#{version}/")
       end
 
       protected
 
       def delete_files(pattern)
-        Volley::Log.info "delete_files #{pattern}"
+        Volley::Log.debug "delete_files #{pattern}"
         dir = @connection.directories.get(@bucket)
-        list = dir.files.map {|e| [e.key, e]}.select {|e| e.first =~ /^#{pattern}/}.map {|e| e.last}
+        list = []
+        dir.files.each {|e| list << e if e.key =~ /^#{pattern}/}
         list.each do |f|
-          Volley::Log.info "- #{f.key}"
+          Volley::Log.debug "- #{f.key}"
           f.destroy
         end
         true
