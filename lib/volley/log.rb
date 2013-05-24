@@ -1,4 +1,5 @@
 require "yell"
+require "volley/ext/yell/adapters/volley"
 
 module Volley
   class Log
@@ -16,7 +17,7 @@ module Volley
         else
           @loggers.delete(dest) if @loggers[dest]
           FileUtils.mkdir_p(File.dirname(dest))
-          @loggers[dest] = Yell.new(:datefile, dest,
+          @loggers[dest] = Yell.new(:volley, dest,
                                     :level => level, :format => format,
                                     :keep  => 7, :symlink => true)
         end

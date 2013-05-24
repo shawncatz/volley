@@ -3,7 +3,7 @@ unless defined?(Volley::Version)
     module Version
       MAJOR  = 0
       MINOR  = 1
-      TINY   = 23
+      TINY   = 24
       TAG    = nil
       STRING = [MAJOR, MINOR, TINY, TAG].compact.join('.')
     end
