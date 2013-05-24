@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.24:
+* add support for changing user with Volley::Dsl::VolleyFile#user method.
+* add custom Yell adapter for Volley to set group permissions on log files, to finally get rid of perm errors with multiple users running volley on same system
+
 ## v0.1.23:
 * fixes issues with project, branch and version deletion and cleans up some of the reserved plans
 
