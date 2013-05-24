@@ -40,6 +40,27 @@ module Volley
           Volley::Log.add(level, dest)
         end
 
+        def user(name)
+          raise "user '#@user' already specified" if @user
+
+          cuid = Process.euid
+          raise "'user #{name}' called in configuration, but process uid is not root (0)" unless cuid == 0
+
+          begin
+            pw = Etc.getpwnam(name)
+          rescue ArgumentError => e
+            raise "could not find user '#{name}', check your Volleyfile configuration"
+          end
+
+          nuid = pw[:uid]
+
+          if cuid != nuid
+            puts "changing user id to: #{nuid} (from #{cuid})"
+            Process::UID.change_privilege(nuid)
+            @user = name
+          end
+        end
+
         def directory(dir)
           Volley.config.directory = dir
         end
