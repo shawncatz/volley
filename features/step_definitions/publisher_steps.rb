@@ -84,6 +84,7 @@ end
 
 Then /^the (.*) project should have (.*) branches$/ do |project, count|
   list = @pub.branches(project)
+  #puts "LIST: #{list.inspect}"
   fail unless list.count == count.to_i
 end
 

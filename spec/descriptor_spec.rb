@@ -41,4 +41,10 @@ describe Volley::Descriptor do
   it "should allow partials when specified" do
     expect { Volley::Descriptor.new("environment", :partial => true)}.not_to raise_exception
   end
+
+  it "should allow change to the version number" do
+    descriptor = Volley::Descriptor.new("spec@trunk")
+    descriptor.version = "001"
+    expect(descriptor.version).to eq("001")
+  end
 end

@@ -15,11 +15,11 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Volley::Version::STRING
 
-  gem.add_dependency "clamp"
-  gem.add_dependency "fog"
-  gem.add_dependency "activesupport"
-  gem.add_dependency "mixlib-shellout"
-  gem.add_dependency "yell"
-  gem.add_dependency "docopt"
-  gem.add_dependency "daemons"
+  gem.add_dependency "clamp", "~> 0.6.1"
+  gem.add_dependency "fog", "~> 1.12.1"
+  gem.add_dependency "activesupport", "~> 3.2.13"
+  gem.add_dependency "mixlib-shellout", "~> 1.1.0"
+  gem.add_dependency "yell", "~> 1.3.0"
+  gem.add_dependency "docopt", "~> 0.5.0"
+  gem.add_dependency "daemons", "~> 1.1.9"
 end
