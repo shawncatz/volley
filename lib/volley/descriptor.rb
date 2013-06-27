@@ -2,7 +2,8 @@
 module Volley
   class Descriptor
     REGEX = /[\@\:\/\\\-]/
-    attr_reader :project, :branch, :version
+    attr_reader :project, :branch
+    attr_accessor :version
 
     def initialize(desc="", options={})
       @options = {
