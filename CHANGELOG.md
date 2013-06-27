@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.25:
+* add support override version number from within action. update fog dependency to resolve issue with possible API change
+
 ## v0.1.24:
 * add support for changing user with Volley::Dsl::VolleyFile#user method.
 * add custom Yell adapter for Volley to set group permissions on log files, to finally get rid of perm errors with multiple users running volley on same system
